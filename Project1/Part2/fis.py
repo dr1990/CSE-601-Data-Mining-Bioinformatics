@@ -22,6 +22,12 @@ for i in range(1, file_data.shape[1]):
 # Converting input data table into array of arrays, eliminating the last column (disease)
 file_data_arr = file_data.values[:, :attribute_count]
 
+# from apyori import apriori
+#
+# rule = apriori(file_data_arr, min_support=0.3, max_length=3)
+# out = list(rule)
+# print(list(rule))
+
 sample_sets = []
 for i in file_data_arr:
     sample_sets.append(set(i))
@@ -33,11 +39,6 @@ for i in file_data_arr:
     for j in i:
         if {j} not in raw_set:
             raw_set.append({j})
-
-
-# temp = set(item_sets)
-# item_sets = []
-# item_set = list(temp)
 
 
 def get_unique_items(freq_sets):
@@ -95,11 +96,11 @@ def main():
                 for sample in sample_sets:
                     if len(sample.intersection(item_set)) == len(item_set):
                         count += 1
-                sup = round((count / record_count) * 100)
+                sup = round((float(count) * 100.0 / record_count))  # TODO: Verify this
                 item_set_support.append(sup)
 
             freq_item_sets = []
-            rejected_item_sets = []
+
             for index, sup in enumerate(item_set_support):
                 if sup >= min_support:
                     freq_item_sets.append(item_sets[index])
