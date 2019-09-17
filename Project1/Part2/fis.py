@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import math
 
 # Reading data from file and appending it with gene identifiers
 
@@ -22,12 +21,6 @@ for i in range(1, file_data.shape[1]):
 # Converting input data table into array of arrays, eliminating the last column (disease)
 file_data_arr = file_data.values[:, :attribute_count]
 
-# from apyori import apriori
-#
-# rule = apriori(file_data_arr, min_support=0.3, max_length=3)
-# out = list(rule)
-# print(list(rule))
-
 sample_sets = []
 for i in file_data_arr:
     sample_sets.append(set(i))
@@ -41,22 +34,16 @@ for i in file_data_arr:
             raw_set.append({j})
 
 
-def get_unique_items(freq_sets):
-    items = []
-    for individual_set in freq_sets:
-        for item in individual_set:
-            items.append(item)
+def has_unique_last_items(a, b, length):
+    first = sorted(a)
+    second = sorted(b)
 
-    return list(set(items))
-
-
-def has_unique_last_items(first, second, len):
-    if len <= 2:
-        return True
     i = 1
     for x, y in zip(first, second):
-        if i >= len - 1:
+        if i == length - 1 and x != y:
             return True
+        if i == length - 1 and x == y:
+            return False
         if x != y:
             return False
         i += 1
@@ -96,7 +83,8 @@ def main():
                 for sample in sample_sets:
                     if len(sample.intersection(item_set)) == len(item_set):
                         count += 1
-                sup = round((float(count) * 100.0 / record_count))  # TODO: Verify this
+                sup = round((count * 100 / record_count))  # TODO: Verify this
+                # sup = count
                 item_set_support.append(sup)
 
             freq_item_sets = []
