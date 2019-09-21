@@ -79,7 +79,7 @@ fis_support_map = dict()
 def main():
     cnt = 0
     # min_support_values = [30, 40, 50, 60, 70]
-    min_support_values = [30]
+    min_support_values = [50]
 
     for min_support in min_support_values:
         print('\nSupport is set to be ' + str(min_support) + '%')
@@ -242,7 +242,129 @@ def save_map():
         f.close()
 
 
+def temp_1(a, b, c):
+    cnt = 0
+    rules = []
+    items = set(c.split(","))
+    for k, v in final_dict.items():
+        key = set(k.split(";")[0].split("|"))  # TODO: KEY-VALUE are interchanged in final_dict
+        val = set(v.split("|"))
+
+        if a == 'RULE':
+            common_set = set(items).intersection(key.union(val))
+        elif a == 'BODY':
+            common_set = set(items).intersection(key)
+        elif a == 'HEAD':
+            common_set = set(items).intersection(val)
+
+        if b == 'ANY':
+            if common_set == items:
+                cnt += 1
+                rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
+        elif b == 'NONE':
+            if len(common_set) == 0:
+                cnt += 1
+                rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
+        else:
+            num = int(b)
+            if len(common_set) == num:
+                cnt += 1
+                rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
+
+    print("\nQuery is: ", a + ";" + b + ";" + c, " Count : ", cnt)
+    return rules, cnt
+
+
+def temp_2(a, b):
+    cnt = 0
+    rules = []
+
+    for k, v in final_dict.items():
+        set_cnt = 0
+        key = set(k.split(";")[0].split("|"))  # TODO: KEY-VALUE are interchanged in final_dict
+        val = set(v.split("|"))
+
+        if a == 'RULE':
+            set_cnt = len(key.union(val))
+        elif a == 'BODY':
+            set_cnt = len(key)
+        elif a == 'HEAD':
+            set_cnt = len(val)
+
+        if set_cnt >= int(b):
+            rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
+            cnt += 1
+
+    print("\nQuery is: ", a + ";" + b, " Count : ", cnt)
+    return rules, cnt
+
+
+def evaluate_query():
+    # template_no = int(input("Enter template number: "))
+    template_no = 3
+
+    if template_no == 1:
+        # query = input('Enter template-1 query (RULE|BODY|HEAD;ANY|NUMBER|NONE;ITEM1,ITEM2,...): ').split(';')
+        # query = "HEAD;ANY;G59_Up".split(";")
+        query = "HEAD;1;G59_Up,G10_Down".split(";")
+        result, cnt = temp_1(query[0], query[1], query[2])
+    elif template_no == 2:
+        # query = input('Enter template-2 query (RULE|BODY|HEAD;NUMBER): ').split(';')
+        query = "RULE;3".split(";")
+        # query = "HEAD;1;G59_Up,G10_Down".split(";")
+        result, cnt = temp_2(query[0], query[1])
+    elif template_no == 3:
+        # query = input('Enter template-3 query (1or1;HEAD;ANY;G10_Down;BODY;1;G59_UP): ').split(';')
+        # query = "1and1;BODY;ANY;G10_Down;HEAD;1;G59_Up".split(";")
+        query = "2or2;BODY;1;HEAD;2".split(";")
+
+        result1 = []
+        result2 = []
+        res = []
+        if query[0][1:3] == 'or':
+            if query[0][0] == '1' and query[0][3] == '1':
+                result1, cnt1 = temp_1(query[1], query[2], query[3])
+                result2, cnt2 = temp_1(query[4], query[5], query[6])
+
+            elif query[0][0] == '1' and query[0][3] == '2':
+                result1, cnt1 = temp_1(query[1], query[2], query[3])
+                result2, cnt2 = temp_2(query[4], query[5])
+
+            elif query[0][0] == '2' and query[0][3] == '1':
+                result1, cnt1 = temp_2(query[1], query[2])
+                result2, cnt2 = temp_1(query[3], query[4], query[5])
+
+            elif query[0][0] == '2' and query[0][3] == '2':
+                result1, cnt1 = temp_2(query[1], query[2])
+                result2, cnt2 = temp_2(query[3], query[4])
+
+            res = set(result1).union(set(result2))
+
+        elif query[0][1:4] == 'and':
+            if query[0][0] == '1' and query[0][4] == '1':
+                result1, cnt1 = temp_1(query[1], query[2], query[3])
+                result2, cnt2 = temp_1(query[4], query[5], query[6])
+
+            elif query[0][0] == '1' and query[0][4] == '2':
+                result1, cnt1 = temp_1(query[1], query[2], query[3])
+                result2, cnt2 = temp_2(query[4], query[5])
+
+            elif query[0][0] == '2' and query[0][4] == '1':
+                result1, cnt1 = temp_2(query[1], query[2])
+                result2, cnt2 = temp_1(query[3], query[4], query[5])
+
+            elif query[0][0] == '2' and query[0][4] == '2':
+                result1, cnt1 = temp_2(query[1], query[2])
+                result2, cnt2 = temp_2(query[3], query[4])
+
+            res = set(result1).intersection(set(result2))
+
+        count = len(res)
+        print("Count is ", count)
+
+
 if __name__ == '__main__':
     main()
     # save_map()
     generate_rules()
+    evaluate_query()
