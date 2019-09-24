@@ -7,8 +7,7 @@ global fis_support_map
 
 final_dict = dict()
 fis_support_map = dict()
-fis_map = dict()    # Dictionary that stores all frequent itemsets (value) for a given length (key)
-
+fis_map = dict()  # Dictionary that stores all frequent itemsets (value) for a given length (key)
 
 # Reading data from file and appending it with gene identifiers
 file_data = pd.read_csv('associationruletestdata.txt', sep='\t', header=None, index_col=None)
@@ -41,9 +40,10 @@ for i in file_data_arr:
             raw_set.append({j})
 
 
-def has_unique_last_items(a, b, length):
-    first = sorted(a)
-    second = sorted(b)
+# Checks for the uniqueness for the last column in both sets.
+def has_unique_last_items(set_a, set_b, length):
+    first = sorted(set_a)
+    second = sorted(set_b)
 
     i = 1
     for x, y in zip(first, second):
@@ -71,9 +71,10 @@ def generate_merge_sets(freq_sets, set_length):
     return new_item_sets
 
 
-def main():
+def main(support):
     # min_support_values = [30, 40, 50, 60, 70]
-    min_support_values = [50]
+    min_support_values = []
+    min_support_values.append(support)
 
     for min_support in min_support_values:
         print('\nSupport is set to be ' + str(min_support) + '%')
@@ -90,13 +91,14 @@ def main():
                 for sample in sample_sets:
                     if len(sample.intersection(item_set)) == len(item_set):
                         count += 1
-                sup = (count * 100 / record_count)
+                # sup = (count * 100 / record_count)
+                sup = count
                 item_set_support.append(sup)
                 fis_support_map[getStr(sorted(item_set))] = sup
 
             freq_item_sets = []
             for index, sup in enumerate(item_set_support):
-                if sup >= min_support:
+                if sup > min_support:
                     freq_item_sets.append(item_sets[index])
                     # fis_list.append(item_sets[index])
 
@@ -115,7 +117,8 @@ def main():
                 item_sets = generate_merge_sets(freq_item_sets, length)
 
 
-def merge(res):
+# Generate all possible rules for k-itemsets where k < len(res)
+def merge(res, confidence):
     if len(res) != 0:
         new_res = dict()
         for k1, v1 in res.items():
@@ -140,13 +143,14 @@ def merge(res):
                             else:
                                 conf = ((nom / denom) * 100)
 
-                            if conf >= 70:
+                            if conf >= confidence:
                                 new_res[getStr(sorted(k1k2))] = getStr(sorted(v1v2))
                                 # Key is messed up in order to make it unique.
                                 # getStr(sorted(k1k2)) is the only key. Rest everything is crap.
-                                final_dict[getStr(sorted(k1k2)) + ";" + getStr(sorted(v1v2)) + str(conf)] = getStr(sorted(v1v2))
+                                final_dict[getStr(sorted(k1k2)) + ";" + getStr(sorted(v1v2)) + str(conf)] = getStr(
+                                    sorted(v1v2))
 
-        merge(new_res)
+        merge(new_res, confidence)
 
 
 def getStr(lst):
@@ -157,8 +161,8 @@ def getStr(lst):
     return out.strip("|")
 
 
-def gen(fk):
-    single_items = list(fk)    # Converting the frequent item set to a list of individual items
+def gen(fk, confidence):
+    single_items = list(fk)  # Converting the frequent item set to a list of individual items
     fk_set = fk
     res = dict()
     for item in single_items:
@@ -171,18 +175,18 @@ def gen(fk):
         else:
             conf = ((nom / denom) * 100)
 
-            if conf >= 70:
+            if conf > confidence:
                 res[getStr(sorted(diff))] = item
                 final_dict[getStr(sorted(diff)) + ";" + item + str(conf)] = item
                 # print(str(diff.copy()), '-->', item)
-    merge(res)
+    merge(res, confidence)
 
 
-def generate_rules():
+def generate_rules(confidence):
     for k, v in fis_map.items():
         if k != '1':
             for freq_item_set in v:
-                gen(freq_item_set)
+                gen(freq_item_set, confidence)
 
     print(len(final_dict))
 
@@ -200,23 +204,23 @@ def save_map():
 
 
 def evaluate_query():
-    # template_no = int(input("Enter template number: "))
-    template_no = 3
+    template_no = int(input("Enter template number: "))
+    # template_no = 3
 
     if template_no == 1:
-        # query = input('Enter template-1 query (RULE|BODY|HEAD;ANY|NUMBER|NONE;ITEM1,ITEM2,...): ').split(';')
+        query = input('Enter template-1 query (RULE|BODY|HEAD;ANY|NUMBER|NONE;ITEM1,ITEM2,...): ').split(';')
         # query = "HEAD;ANY;G59_Up".split(";")
-        query = "HEAD;1;G59_Up,G10_Down".split(";")
+        # query = "HEAD;1;G59_Up,G10_Down".split(";")
         result, cnt = temp_1(query[0], query[1], query[2])
     elif template_no == 2:
-        # query = input('Enter template-2 query (RULE|BODY|HEAD;NUMBER): ').split(';')
-        query = "RULE;3".split(";")
+        query = input('Enter template-2 query (RULE|BODY|HEAD;NUMBER): ').split(';')
+        # query = "RULE;3".split(";")
         # query = "HEAD;1;G59_Up,G10_Down".split(";")
         result, cnt = temp_2(query[0], query[1])
     elif template_no == 3:
-        # query = input('Enter template-3 query (1or1;HEAD;ANY;G10_Down;BODY;1;G59_UP): ').split(';')
+        query = input('Enter template-3 query (1or1;HEAD;ANY;G10_Down;BODY;1;G59_UP): ').split(';')
         # query = "1and1;BODY;ANY;G10_Down;HEAD;1;G59_Up".split(";")
-        query = "2or2;BODY;1;HEAD;2".split(";")
+        # query = "2or2;BODY;1;HEAD;2".split(";")
 
         result1 = []
         result2 = []
@@ -262,6 +266,8 @@ def evaluate_query():
         count = len(res)
         print("Count is ", count)
 
+
+# Answers Query for template-1
 def temp_1(a, b, c):
     cnt = 0
     rules = []
@@ -295,6 +301,7 @@ def temp_1(a, b, c):
     return rules, cnt
 
 
+# Answers Query for template-2
 def temp_2(a, b):
     cnt = 0
     rules = []
@@ -320,7 +327,9 @@ def temp_2(a, b):
 
 
 if __name__ == '__main__':
-    main()
-    # save_map()
-    generate_rules()
+    support = int(input("Enter Support Value: "))
+    confidence = int(input("Enter Confidence Value: "))
+
+    main(support)
+    generate_rules(confidence)
     evaluate_query()
