@@ -19,18 +19,18 @@ def run_tsne(data):
 
 
 def main():
-    file = "pca_c.txt"
+    file = "pca_demo.txt"
     data, labels = readfile(file)
     labels = pd.DataFrame(labels)
     tse_data = run_tsne(data)
-    print(tse_data)
+    # print(tse_data)
     plot_data = np.append(tse_data, labels, 1)
     plot_data = pd.DataFrame(plot_data, columns=["F1", "F2", "Labels"])
     plot_data[["F1", "F2"]] = plot_data[["F1", "F2"]].apply(pd.to_numeric)
-    print(plot_data.describe())
+    # print(plot_data.describe())
     sns.set(palette="muted", style='white')
     plot = sns.scatterplot(data=plot_data, x="F1", y="F2", hue="Labels")
-    plt.title("Scatter plot for t-sne reduction")
+    plt.title("Scatter plot for t-sne reduction for file: " + file)
     plt.show()
 
 

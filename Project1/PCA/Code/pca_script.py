@@ -21,7 +21,7 @@ def pca(data):
     # Adjust the data around mean
     adj_data = data - mean
 
-    # find co-variance metrix
+    # find co-variance matrix
     cov = np.cov(adj_data.T)
 
     # Get eigen-value and eigen-vector of the co-variance matrix
@@ -62,13 +62,12 @@ def plot_pca(pca, label, file):
         label_map.update({x: i})
         i += 1
 
-    # Assign different color to each color coded values
+    # Color code different disease to unique number
     color = [plt.cm.jet(float(val) / max(label_map.values())) for val in label_map.values()]
 
-    p = np.append(pca, label, axis=1)
     for key, value in label_map.items():
-        x = [float(k) for (t, k) in enumerate(p[:, 0]) if p[t, 2] == key]
-        y = [float(k) for (t, k) in enumerate(p[:, 1]) if p[t, 2] == key]
+        x = [float(k) for (t, k) in enumerate(pca[:, 0]) if label[t] == key]
+        y = [float(k) for (t, k) in enumerate(pca[:, 1]) if label[t] == key]
         plt.scatter(x, y, c=color[value], label=str(key))
 
     plt.title("Scatter Plot for " + file + ". Algorithm: PCA")
@@ -77,10 +76,10 @@ def plot_pca(pca, label, file):
 
 
 def main():
-    file = "pca_c.txt"
+    file = "pca_demo.txt"
     lines = convert_to_array(file)
 
-    r = lines.shape[0]
+    # Separate features and label
     c = lines.shape[1]
 
     data = lines[:, :-1]
@@ -88,8 +87,11 @@ def main():
     label = np.array(l)
 
     data = convert_to_num(data)
+
+    # Run PCA algorithm on the data
     p = pca(data)
 
+    # Scatter Plot of the of data in reduced dimension
     plot_pca(p, label, file)
 
 
