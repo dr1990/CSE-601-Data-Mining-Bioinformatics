@@ -1,10 +1,17 @@
 import numpy as np
 import pandas as pd
 
-# Reading data from file and appending it with gene identifiers
+global final_dict
+global fis_map
+global fis_support_map
 
-file_data = pd.read_csv('associationruletestdata.txt', sep='\t', header=None,
-                        index_col=None)
+final_dict = dict()
+fis_support_map = dict()
+fis_map = dict()    # Dictionary that stores all frequent itemsets (value) for a given length (key)
+
+
+# Reading data from file and appending it with gene identifiers
+file_data = pd.read_csv('associationruletestdata.txt', sep='\t', header=None, index_col=None)
 
 record_count = file_data.shape[0]  # number of rows
 attribute_count = file_data.shape[1]  # number of columns
@@ -50,10 +57,6 @@ def has_unique_last_items(a, b, length):
     return True
 
 
-global fis_map
-fis_map = dict()
-
-
 # https://www-users.cs.umn.edu/~kumar001/dmbook/ch6.pdf
 # Using F(k-1) * F(k-1) method
 def generate_merge_sets(freq_sets, set_length):
@@ -65,19 +68,10 @@ def generate_merge_sets(freq_sets, set_length):
                 union_set = freq_sets[i].union(freq_sets[j])
                 if len(union_set) == set_length:
                     new_item_sets.append(union_set)
-    # fis_map[set_length] = new_item_sets
     return new_item_sets
 
 
-global fis_support_map
-global fis_list
-
-fis_list = []
-fis_support_map = dict()
-
-
 def main():
-    cnt = 0
     # min_support_values = [30, 40, 50, 60, 70]
     min_support_values = [50]
 
@@ -98,14 +92,13 @@ def main():
                         count += 1
                 sup = (count * 100 / record_count)
                 item_set_support.append(sup)
-                fis_support_map[getStr(sorted(item_set))] = count
+                fis_support_map[getStr(sorted(item_set))] = sup
 
             freq_item_sets = []
-
             for index, sup in enumerate(item_set_support):
                 if sup >= min_support:
                     freq_item_sets.append(item_sets[index])
-                    fis_list.append(item_sets[index])
+                    # fis_list.append(item_sets[index])
 
             fis_map[str(length)] = freq_item_sets
             sum += len(freq_item_sets)
@@ -119,34 +112,7 @@ def main():
                 flag = False
             else:
                 length += 1
-                # if length > 2:
-                #     break
                 item_sets = generate_merge_sets(freq_item_sets, length)
-
-
-# def ap_genrules(fk, hm):
-#     k = len(fk)
-#     m = len(hm)
-#     min_conf = 0.5
-#
-#     if k > m + 1:
-#         hm_plus_one = fis_map.get(m + 1)
-#
-#         for x in hm_plus_one:
-#             nom = fis_support_map.get(getStr(sorted(x)))
-#             diff = fk.difference(x)
-#             denom = fis_support_map.get(getStr(sorted(diff)))
-#             conf = nom / denom
-#
-#             if conf >= min_conf:
-#                 print(diff, '-->', x)
-#             else:
-#                 hm_plus_one.remove(x)
-#         ap_genrules(fk, hm_plus_one)
-
-
-global final_dict
-final_dict = dict()
 
 
 def merge(res):
@@ -178,8 +144,7 @@ def merge(res):
                                 new_res[getStr(sorted(k1k2))] = getStr(sorted(v1v2))
                                 # Key is messed up in order to make it unique.
                                 # getStr(sorted(k1k2)) is the only key. Rest everything is crap.
-                                final_dict[getStr(sorted(k1k2)) + ";" + getStr(sorted(v1v2)) + str(conf)] = getStr(
-                                    sorted(v1v2))
+                                final_dict[getStr(sorted(k1k2)) + ";" + getStr(sorted(v1v2)) + str(conf)] = getStr(sorted(v1v2))
 
         merge(new_res)
 
@@ -193,7 +158,7 @@ def getStr(lst):
 
 
 def gen(fk):
-    single_items = list(fk)
+    single_items = list(fk)    # Converting the frequent item set to a list of individual items
     fk_set = fk
     res = dict()
     for item in single_items:
@@ -214,18 +179,10 @@ def gen(fk):
 
 
 def generate_rules():
-    # for i in range(1, 10):
-    # f = open("fis_length_" + str(i) + ".csv", 'r+')
-    #
-    # lines = f.read().splitlines()
-    # lines = [[val for val in l.split(',')] for l in lines]
-    # lines = list(lines)
-    # f.close()
-
     for k, v in fis_map.items():
         if k != '1':
-            for line in v:
-                gen(line)
+            for freq_item_set in v:
+                gen(freq_item_set)
 
     print(len(final_dict))
 
@@ -240,63 +197,6 @@ def save_map():
 
             f.write(line.strip(",") + "\n")
         f.close()
-
-
-def temp_1(a, b, c):
-    cnt = 0
-    rules = []
-    items = set(c.split(","))
-    for k, v in final_dict.items():
-        key = set(k.split(";")[0].split("|"))  # TODO: KEY-VALUE are interchanged in final_dict
-        val = set(v.split("|"))
-
-        if a == 'RULE':
-            common_set = set(items).intersection(key.union(val))
-        elif a == 'BODY':
-            common_set = set(items).intersection(key)
-        elif a == 'HEAD':
-            common_set = set(items).intersection(val)
-
-        if b == 'ANY':
-            if common_set == items:
-                cnt += 1
-                rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
-        elif b == 'NONE':
-            if len(common_set) == 0:
-                cnt += 1
-                rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
-        else:
-            num = int(b)
-            if len(common_set) == num:
-                cnt += 1
-                rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
-
-    print("\nQuery is: ", a + ";" + b + ";" + c, " Count : ", cnt)
-    return rules, cnt
-
-
-def temp_2(a, b):
-    cnt = 0
-    rules = []
-
-    for k, v in final_dict.items():
-        set_cnt = 0
-        key = set(k.split(";")[0].split("|"))  # TODO: KEY-VALUE are interchanged in final_dict
-        val = set(v.split("|"))
-
-        if a == 'RULE':
-            set_cnt = len(key.union(val))
-        elif a == 'BODY':
-            set_cnt = len(key)
-        elif a == 'HEAD':
-            set_cnt = len(val)
-
-        if set_cnt >= int(b):
-            rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
-            cnt += 1
-
-    print("\nQuery is: ", a + ";" + b, " Count : ", cnt)
-    return rules, cnt
 
 
 def evaluate_query():
@@ -361,6 +261,62 @@ def evaluate_query():
 
         count = len(res)
         print("Count is ", count)
+
+def temp_1(a, b, c):
+    cnt = 0
+    rules = []
+    items = set(c.split(","))
+    for k, v in final_dict.items():
+        key = set(k.split(";")[0].split("|"))  # TODO: KEY-VALUE are interchanged in final_dict
+        val = set(v.split("|"))
+
+        if a == 'RULE':
+            common_set = set(items).intersection(key.union(val))
+        elif a == 'BODY':
+            common_set = set(items).intersection(key)
+        elif a == 'HEAD':
+            common_set = set(items).intersection(val)
+
+        if b == 'ANY':
+            if common_set == items:
+                cnt += 1
+                rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
+        elif b == 'NONE':
+            if len(common_set) == 0:
+                cnt += 1
+                rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
+        else:
+            num = int(b)
+            if len(common_set) == num:
+                cnt += 1
+                rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
+
+    print("\nQuery is: ", a + ";" + b + ";" + c, " Count : ", cnt)
+    return rules, cnt
+
+
+def temp_2(a, b):
+    cnt = 0
+    rules = []
+
+    for k, v in final_dict.items():
+        set_cnt = 0
+        key = set(k.split(";")[0].split("|"))  # TODO: KEY-VALUE are interchanged in final_dict
+        val = set(v.split("|"))
+
+        if a == 'RULE':
+            set_cnt = len(key.union(val))
+        elif a == 'BODY':
+            set_cnt = len(key)
+        elif a == 'HEAD':
+            set_cnt = len(val)
+
+        if set_cnt >= int(b):
+            rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
+            cnt += 1
+
+    print("\nQuery is: ", a + ";" + b, " Count : ", cnt)
+    return rules, cnt
 
 
 if __name__ == '__main__':
