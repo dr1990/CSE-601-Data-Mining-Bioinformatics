@@ -70,7 +70,7 @@ def generate_merge_sets(freq_sets, set_length):
                     new_item_sets.append(union_set)
     return new_item_sets
 
-
+# Method to generate frequent item sets from the initial items list, for the given minimum support values
 def main(support):
     # min_support_values = [30, 40, 50, 60, 70]
     min_support_values = []
@@ -91,23 +91,23 @@ def main(support):
                 for sample in sample_sets:
                     if len(sample.intersection(item_set)) == len(item_set):
                         count += 1
-                # sup = (count * 100 / record_count)
-                sup = count
+                sup = (count * 100 / record_count)
+                # sup = count
                 item_set_support.append(sup)
                 fis_support_map[getStr(sorted(item_set))] = sup
 
             freq_item_sets = []
             for index, sup in enumerate(item_set_support):
-                if sup > min_support:
+                if sup >= min_support:
                     freq_item_sets.append(item_sets[index])
                     # fis_list.append(item_sets[index])
 
             fis_map[str(length)] = freq_item_sets
             sum += len(freq_item_sets)
             if len(freq_item_sets) != 0:
-                print('number of length-' + str(length) + ' frequent itemsets: ' + str(len(freq_item_sets)))
+                print('Number of length-' + str(length) + ' frequent itemsets: ' + str(len(freq_item_sets)))
             else:
-                print('number of all lengths frequent itemsets:' + str(sum))
+                print('Number of all lengths frequent itemsets: ' + str(sum))
                 sum = 0
 
             if len(freq_item_sets) == 0:
@@ -153,6 +153,7 @@ def merge(res, confidence):
         merge(new_res, confidence)
 
 
+# Method to format item sets into a string to be stored as keys in in a map
 def getStr(lst):
     out = ''
     for v in lst:
@@ -181,14 +182,14 @@ def gen(fk, confidence):
                 # print(str(diff.copy()), '-->', item)
     merge(res, confidence)
 
-
+# Method that initiates rule generation from the stored frequent item sets of different lengths
 def generate_rules(confidence):
     for k, v in fis_map.items():
-        if k != '1':
+        if k != '1':    # No rules can be generated for length-1 frequent item sets
             for freq_item_set in v:
                 gen(freq_item_set, confidence)
 
-    print(len(final_dict))
+    print("\nNumber of rules generated for support " + str(support) + "% and confidence " + str(confidence) + "% - ", len(final_dict))
 
 
 def save_map():
@@ -326,6 +327,7 @@ def temp_2(a, b):
     return rules, cnt
 
 
+# Starting point of the program
 if __name__ == '__main__':
     support = int(input("Enter Support Value: "))
     confidence = int(input("Enter Confidence Value: "))
