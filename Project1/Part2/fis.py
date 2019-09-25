@@ -265,7 +265,7 @@ def evaluate_query():
             res = set(result1).intersection(set(result2))
 
         count = len(res)
-        print("Count is ", count)
+        print("Total rules count: ", count)
 
 
 # Answers Query for template-1
@@ -298,7 +298,7 @@ def temp_1(a, b, c):
                 cnt += 1
                 rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
 
-    print("\nQuery is: ", a + ";" + b + ";" + c, " Count : ", cnt)
+    print("\nQuery: ", a + ";" + b + ";" + c, "\nRule Count: ", cnt)
     return rules, cnt
 
 
@@ -323,7 +323,7 @@ def temp_2(a, b):
             rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
             cnt += 1
 
-    print("\nQuery is: ", a + ";" + b, " Count : ", cnt)
+    print("\nQuery: ", a + ";" + b, "\nCount: ", cnt)
     return rules, cnt
 
 
