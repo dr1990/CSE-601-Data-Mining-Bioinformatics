@@ -48,8 +48,6 @@ def convert_to_num(data):
 
 
 def plot_pca(pca, label, file):
-    np.random.seed(252354234)
-
     distinct_lable = set([])
 
     for x in label:

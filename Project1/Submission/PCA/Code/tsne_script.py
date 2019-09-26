@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-
+# Reads data form the file and parse them
 def readfile(filename):
     data = pd.read_csv(filename, header=None, sep="\t")
     data = np.array(data.values)
@@ -14,7 +14,6 @@ def readfile(filename):
 
 
 def run_tsne(data):
-    # data = data[:,:16]
     data_reduced = TSNE(n_components=2).fit_transform(data)
     return data_reduced
 

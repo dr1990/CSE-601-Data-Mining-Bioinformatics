@@ -3,7 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-
+# Reads input data from the file.
 def readfile(filename):
     data = pd.read_csv(filename, header=None, sep="\t")
     data = np.array(data.values)
@@ -11,7 +11,7 @@ def readfile(filename):
     labels = data[:, -1]
     return data_parsed, labels
 
-
+# Use library to run SVD on raw data.
 def run_svd(data):
     u, s, v = np.linalg.svd(np.matrix(data, dtype='float'), full_matrices=True)
     svd_data = u[:, :2]
@@ -22,7 +22,6 @@ def run_svd(data):
 def main(filename):
     data, labels = readfile(filename)
     labels = pd.DataFrame(labels)
-    data = data - np.mean(data, axis=0)
     svd_data = run_svd(data)
     plot_data = np.append(svd_data, labels, 1)
     plot_data = pd.DataFrame(plot_data, columns=["F1", "F2", "Diseases"])
@@ -33,4 +32,4 @@ def main(filename):
     plt.show()
 
 
-main("pca_a.txt")
+main("pca_demo.txt")

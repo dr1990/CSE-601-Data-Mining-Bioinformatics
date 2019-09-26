@@ -192,9 +192,13 @@ def evaluate_query():
     if template_no == 1:
         query = input('Enter template-1 query (RULE|BODY|HEAD;ANY|NUMBER|NONE;ITEM1,ITEM2,...): ').split(';')
         result, cnt = temp_1(query[0], query[1], query[2])
+        print(result)
+        print("Total rules count: ", cnt)
     elif template_no == 2:
         query = input('Enter template-2 query (RULE|BODY|HEAD;NUMBER): ').split(';')
         result, cnt = temp_2(query[0], query[1])
+        print(result)
+        print("Total rules count: ", cnt)
     elif template_no == 3:
         query = input('Enter template-3 query (1or1;HEAD;ANY;G10_Down;BODY;1;G59_UP): ').split(';')
 
@@ -275,7 +279,6 @@ def temp_1(a, b, c):
                 rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
 
     print("\nTemplate 1 Query: ", a + ";" + b + ";" + c, "\nRule Count: ", cnt)
-    print(rules)
     return rules, cnt
 
 
@@ -292,16 +295,15 @@ def temp_2(a, b):
         if a == 'RULE':
             set_cnt = len(key.union(val))
         elif a == 'BODY':
-            set_cnt = len(key)
-        elif a == 'HEAD':
             set_cnt = len(val)
+        elif a == 'HEAD':
+            set_cnt = len(key)
 
         if set_cnt >= int(b):
             rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
             cnt += 1
 
     print("\nTemplate 2 Query: ", a + ";" + b, "\nCount: ", cnt)
-    print(rules)
     return rules, cnt
 
 
