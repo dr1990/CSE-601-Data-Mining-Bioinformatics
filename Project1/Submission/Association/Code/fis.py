@@ -256,23 +256,23 @@ def temp_1(a, b, c):
         if a == 'RULE':
             common_set = set(items).intersection(key.union(val))
         elif a == 'BODY':
-            common_set = set(items).intersection(key)
-        elif a == 'HEAD':
             common_set = set(items).intersection(val)
+        elif a == 'HEAD':
+            common_set = set(items).intersection(key)
 
         if b == 'ANY':
             if common_set == items:
                 cnt += 1
-                rules.append(','.join(sorted(val)) + "->" + ','.join(sorted(key)))
+                rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
         elif b == 'NONE':
             if len(common_set) == 0:
                 cnt += 1
-                rules.append(','.join(sorted(val)) + "->" + ','.join(sorted(key)))
+                rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
         else:
             num = int(b)
             if len(common_set) == num:
                 cnt += 1
-                rules.append(','.join(sorted(val)) + "->" + ','.join(sorted(key)))
+                rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
 
     print("\nTemplate 1 Query: ", a + ";" + b + ";" + c, "\nRule Count: ", cnt)
     print(rules)
@@ -297,7 +297,7 @@ def temp_2(a, b):
             set_cnt = len(val)
 
         if set_cnt >= int(b):
-            rules.append(','.join(sorted(val)) + "->" + ','.join(sorted(key)))
+            rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
             cnt += 1
 
     print("\nTemplate 2 Query: ", a + ";" + b, "\nCount: ", cnt)

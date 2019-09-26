@@ -292,9 +292,9 @@ def temp_2(a, b):
         if a == 'RULE':
             set_cnt = len(key.union(val))
         elif a == 'BODY':
-            set_cnt = len(val)
-        elif a == 'HEAD':
             set_cnt = len(key)
+        elif a == 'HEAD':
+            set_cnt = len(val)
 
         if set_cnt >= int(b):
             rules.append(','.join(sorted(key)) + "->" + ','.join(sorted(val)))
