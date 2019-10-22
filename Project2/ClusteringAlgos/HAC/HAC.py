@@ -2,14 +2,18 @@ import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cdist
 from pprint import pprint
+import seaborn as sb
+from matplotlib import pyplot
+from ClusteringAlgos import pca
 
-data = pd.read_csv("../../iyer.txt", sep="\t", index_col=0,
-                   header=None)
+fileName = 'iyer.txt'
+# fileName= 'cho.txt'
+data = pd.read_csv("../../" + fileName, sep="\t", index_col=0, header=None)
 
-data = data[~(data[1] == -1)]  # removing outliers (-1 rows)
+# data = data[~(data[1] == -1)]  # removing outliers (-1 rows)
 data_labels = data[1]  # ground truth values
 cluster_count = data_labels.max()
-gene_ids = data.index  # row numbers
+geneIds = data.index  # row numbers
 del data[1]  # deleting the truth values column
 
 geneId_map = {index: gene_id for index, gene_id in enumerate(data.index)}
@@ -49,5 +53,29 @@ while (rowCount != cluster_count):
 
 pprint(clusters)
 
+clusterMap = dict()
 
+# Assigning cluster numbers to each data point starting from 1
+for x,i in enumerate(clusters.values(), 1):
+    for j in i:
+        clusterMap[j] = x
+
+
+clusterIds = [0] * len(clusterMap)
+
+for k,v in clusterMap.items():
+    clusterIds[k - 1] = v
+
+pca_data = pca.pca(data)
+pca_data_df = pd.DataFrame(pca_data, columns=['x','y'], index=geneIds)
+pca_data_df['labels_GT'] = data_labels
+pca_data_df['labels_HAC'] = clusterIds
+
+plot1 = sb.scatterplot(data= pca_data_df, x='x', y='y', hue='labels_GT', legend='full', palette='Accent', marker='x')
+plot1.set_title(fileName + ' Ground Truth')
+pyplot.show()
+
+plot2 = sb.scatterplot(data= pca_data_df, x = 'x', y= 'y', hue='labels_HAC', legend='full', palette='prism', marker='x')
+plot2.set_title('Clusters formed using HAC on ' + fileName)
+pyplot.show()
 
