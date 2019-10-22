@@ -31,9 +31,7 @@ def get_incidence_matrix(ground_truth):
     # write(incidence_matrix)
     return incidence_matrix
 
-
 cluster_group = dict()
-
 
 def get_cluster_group(id, ground_truth):
     for i in range(len(id)):

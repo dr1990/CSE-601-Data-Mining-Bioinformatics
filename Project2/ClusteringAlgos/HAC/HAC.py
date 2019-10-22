@@ -21,7 +21,7 @@ data = data.values  # converting Dataframe into a numpy array
 
 # Normalizing input data
 data = (data - data.mean()) / (data.max() - data.min())
-data
+# print(data)
 
 # creating the distance matrix
 # cdist(metric = 'euclidean') is the Euclidean distance of all datapoints with each other
@@ -48,5 +48,6 @@ while (rowCount != cluster_count):
     rowCount -= 1
 
 pprint(clusters)
+
 
 
