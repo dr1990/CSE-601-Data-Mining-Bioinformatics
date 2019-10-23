@@ -70,7 +70,7 @@ def get_adjacency_matrix(attr):
     return w
 
 
-filename = 'cho.txt'
+filename = '../cho.txt'
 # filename = 'iyer.txt'
 data = readfile(filename)
 init_param(data)
@@ -86,18 +86,20 @@ print(sym)
 
 eig_val, eig_vec = eigh(L)
 
-# val = sorted(np.reshape(eig_val, (-1, 1)))
-val = np.argpartition(eig_val, 5)
+# # val = sorted(np.reshape(eig_val, (-1, 1)))
+# val = np.argpartition(eig_val, 5)
 
-fig = plt.figure(figsize=[12, 6])
-ax = fig.gca
-plt.subplot(221)
-plt.plot(eig_val)
-plt.subplot(222)
-plt.plot(eig_vec[:, 0])
-plt.subplot(223)
-plt.plot(eig_vec[:, 1])
-plt.subplot(224)
-plt.plot(eig_vec[:, 2])
-
-print()
+# fig = plt.figure(figsize=[12, 6])
+# ax = fig.gca
+# plt.subplot(221)
+# plt.plot(eig_val)
+# plt.subplot(222)
+# plt.plot(eig_vec[:, 0])
+# plt.subplot(223)
+# plt.plot(eig_vec[:, 1])
+# plt.subplot(224)
+# plt.plot(eig_vec[:, 2])
+# plt.show()
+# print()
+print(eig_vec.shape)
+print(eig_val)

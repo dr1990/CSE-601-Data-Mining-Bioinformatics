@@ -18,7 +18,7 @@ def write(data):
     f.close()
 
 
-def get_incidence_matrix(ground_truth):
+def get_incidence_matrix(ground_truth, cluster_group):
     n = len(ground_truth)
     incidence_matrix = np.zeros((n, n), dtype='int')
 
@@ -31,16 +31,18 @@ def get_incidence_matrix(ground_truth):
     # write(incidence_matrix)
     return incidence_matrix
 
-cluster_group = dict()
+
 
 def get_cluster_group(id, ground_truth):
+    cluster_group = dict()
     for i in range(len(id)):
         if ground_truth[i] in cluster_group.keys():
             values = cluster_group[ground_truth[i]]
         else:
             values = list()
-        values.append(id[i])
+        values.append(i)
         cluster_group[ground_truth[i]] = values
+    return cluster_group
 
 
 def get_categories(im_a, im_b):
@@ -65,17 +67,17 @@ def get_categories(im_a, im_b):
     return categories
 
 
-# filename = '../cho.txt'
-filename = '../iyer.txt'
-data = readfile(filename)
-id = np.array(data[:, 0], dtype='int')
-ground_truth = np.array(data[:, 1], dtype='int')
-get_cluster_group(id, ground_truth)
-incidence_matrix_gt = get_incidence_matrix(ground_truth)
-categories = get_categories(incidence_matrix_gt, incidence_matrix_gt)
+# # filename = '../cho.txt'
+# filename = '../iyer.txt'
+# data = readfile(filename)
+# id = np.array(data[:, 0], dtype='int')
+# ground_truth = np.array(data[:, 1], dtype='int')
+# cluster_group = get_cluster_group(id, ground_truth)
+# incidence_matrix_gt = get_incidence_matrix(ground_truth, cluster_group)
+# categories = get_categories(incidence_matrix_gt, incidence_matrix_gt)
 
-rand = (categories[0][0] + categories[1][1]) / np.sum(categories)
-jaccard = categories[1][1] / (categories[1][0] + categories[0][1] + categories[1][1])
+# rand = (categories[0][0] + categories[1][1]) / np.sum(categories)
+# jaccard = categories[1][1] / (categories[1][0] + categories[0][1] + categories[1][1])
 
-print("Rand: ", rand)
-print("Jaccard: ", jaccard)
+# print("Rand: ", rand)
+# print("Jaccard: ", jaccard)
