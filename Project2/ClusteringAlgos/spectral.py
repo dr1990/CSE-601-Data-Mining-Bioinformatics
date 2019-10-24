@@ -1,6 +1,8 @@
+from pprint import pprint
+from numpy.linalg import eigh
+from kmeans import *
 import numpy as np
 import pandas as pd
-from numpy.linalg import eigh
 import matplotlib.pyplot as plt
 
 
@@ -69,8 +71,14 @@ def get_adjacency_matrix(attr):
 
     return w
 
+def getNbyKMatrix(k, eigen_map, eig_val):
+    eig_val = np.sort(eig_val)
+    reduced_data = np.empty((n_data, k))
+    for i in range(k):
+        reduced_data[:,i] = eigen_map[eig_val[i]]
+    return reduced_data
 
-filename = '../cho.txt'
+filename = '../iyer.txt'
 # filename = 'iyer.txt'
 data = readfile(filename)
 init_param(data)
@@ -86,20 +94,24 @@ print(sym)
 
 eig_val, eig_vec = eigh(L)
 
-# # val = sorted(np.reshape(eig_val, (-1, 1)))
-# val = np.argpartition(eig_val, 5)
+eigen_map = dict()
 
-# fig = plt.figure(figsize=[12, 6])
-# ax = fig.gca
-# plt.subplot(221)
-# plt.plot(eig_val)
-# plt.subplot(222)
-# plt.plot(eig_vec[:, 0])
-# plt.subplot(223)
-# plt.plot(eig_vec[:, 1])
-# plt.subplot(224)
-# plt.plot(eig_vec[:, 2])
-# plt.show()
-# print()
-print(eig_vec.shape)
-print(eig_val)
+for i in range (len(eig_val)):
+    eigen_map[eig_val[i]] = eig_vec[:,i]
+
+reduced_data = getNbyKMatrix(no_of_cluster, eigen_map, eig_val)
+
+res = np.zeros((no_of_cluster, reduced_data.shape[1]))
+for i in range(20): 
+    CENTROIDS = choose_initial_centroids(reduced_data, no_of_cluster)
+    clusters = process_kmeans(reduced_data, CENTROIDS, no_of_cluster)
+    res = np.add(res, CENTROIDS)
+#reassign centroids with average of all the runs
+CENTROIDS = res/20
+#run k means final time
+clusters = process_kmeans(reduced_data, CENTROIDS, no_of_cluster)
+data_pca = pca(reduced_data)
+plot_pca(data_pca, clusters, filename)
+
+# print(clusters)
+# print(CENTROIDS)
