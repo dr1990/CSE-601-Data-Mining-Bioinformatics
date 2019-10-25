@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-
+from sklearn.cluster import KMeans
 
 
 filename = "../cho.txt"
@@ -29,13 +29,14 @@ for i in range(20):
 #reassign centroids with average of all the runs
 CENTROIDS = res/20
 #run k means final time
-clusters = process_kmeans(data, CENTROIDS, NUM_CLUSTERS)
+# clusters = process_kmeans(data, CENTROIDS, NUM_CLUSTERS)
 # print(clusters)
 # print(CENTROIDS)
 
+clusters  = KMeans(n_clusters=NUM_CLUSTERS, init='random', n_init = 20).fit_predict(data)
 cluster_group = get_cluster_group(ids, clusters)
 truth_group = get_cluster_group(ids, global_truth)
-pprint(cluster_group, indent=2)
+# pprint(cluster_group, indent=2)
 kmean_matrix = get_incidence_matrix(clusters, cluster_group)
 truth_matrix = get_incidence_matrix(global_truth, truth_group)
 categories = get_categories(kmean_matrix, truth_matrix)
@@ -49,3 +50,5 @@ print("Jaccard Coeff for K-means algorithm: ", jaccard)
 data_pca = pca(data)
 plot_pca(data_pca, clusters, filename)
 plot_pca(data_pca, global_truth, filename)
+ 
+

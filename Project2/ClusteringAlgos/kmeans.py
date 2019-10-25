@@ -7,6 +7,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 
+
 def readfile(filename):
     data = pd.read_csv(filename, header=None, sep="\t")
     data = np.array(data.values)
@@ -26,6 +27,8 @@ def choose_initial_centroids(data, num_clusters):
 	return np.random.permutation(data)[:num_clusters]
 	# print(CENTROIDS.shape)
 
+# def choose_initial_centroids2(data, num_clusters):
+
 def distance(point1, point2):
 	#Similarity measure between two data points i.e. euclidean distance
 	return math.sqrt(np.sum(np.square(point1 - point2)))
@@ -37,7 +40,15 @@ def recalculate_centroid(cluster_members, size):
 		res = np.add(res, np.array(member))
 	res = res/len(cluster_members)
 	return res 
-
+def get_point_with_max_sse(data, centre):
+	maxp = -99999999
+	maxssse_point = None
+	for point in data:
+		dist = distance(point, centre)
+		if(dist > maxp):
+			maxp = dist
+			maxssse_point = point
+	return maxssse_point
 def process_kmeans(data, centroids, num_clusters):
 	#clusters is an array such that clusters[i] = j means that ith data object belongs to j
 	clusters = [0] * data.shape[0]
@@ -67,7 +78,7 @@ def process_kmeans(data, centroids, num_clusters):
 				temp_centroids[i] = recalculate_centroid(cluster_members, data.shape[1])
 			else:
 				#todo for now random centroid
-				temp_centroids[i] = data[np.random.choice(len(data), 1)]
+				temp_centroids[i] = get_point_with_max_sse(data, centre)
 		centroids = temp_centroids
 	# print(previous_clusters)
 	# print(clusters)

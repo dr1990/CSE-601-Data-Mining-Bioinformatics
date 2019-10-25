@@ -4,6 +4,7 @@ from kmeans import *
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
 
 
 def readfile(filename):
@@ -25,16 +26,12 @@ def init_param(data):
     clusters = set(np.array(data[:, 1], dtype='int'))
     no_of_cluster = len(clusters) if -1 not in clusters else len(clusters) - 1
 
-    print()
-
-
 def is_sym(a):
     return np.allclose(a, a.T, rtol=n_data, atol=n_data)
 
 
-def knn(attr, k, sigma):
+def knn(attr, sigma):
     wt = np.zeros((n_data, n_data))
-    max = np.zeros((n_data, k))
     for i in range(n_data):
         for j in range(i, n_data):
             if i == j:
@@ -63,11 +60,10 @@ def get_diag(W):
     return d
 
 
-def get_adjacency_matrix(attr):
+def get_adjacency_matrix(attr, sigma):
     w = np.zeros((n_data, n_data))
     k = 10
-    sigma = 4
-    w = knn(attr, k, sigma)
+    w = knn(attr, sigma)
 
     return w
 
@@ -80,10 +76,11 @@ def getNbyKMatrix(k, eigen_map, eig_val):
 
 filename = '../iyer.txt'
 # filename = 'iyer.txt'
+sigma = 2.0
 data = readfile(filename)
 init_param(data)
 
-W = get_adjacency_matrix(attr)
+W = get_adjacency_matrix(attr, sigma)
 
 D = get_diag(W)
 
@@ -110,8 +107,25 @@ for i in range(20):
 CENTROIDS = res/20
 #run k means final time
 clusters = process_kmeans(reduced_data, CENTROIDS, no_of_cluster)
-data_pca = pca(reduced_data)
+# clusters  = KMeans(n_clusters=no_of_cluster, init='random', n_init = 20).fit_predict(data)
+
+global_truth = data[:,1]
+ids = data[:,0]
+cluster_group = get_cluster_group(ids, clusters)
+truth_group = get_cluster_group(ids, global_truth)
+# pprint(cluster_group, indent=2)
+kmean_matrix = get_incidence_matrix(clusters, cluster_group)
+truth_matrix = get_incidence_matrix(global_truth, truth_group)
+categories = get_categories(kmean_matrix, truth_matrix)
+
+rand = (categories[0][0] + categories[1][1]) / np.sum(categories)
+jaccard = categories[1][1] / (categories[1][0] + categories[0][1] + categories[1][1])
+
+print("Rand Coeff for K-means algorithm: ", rand)
+print("Jaccard Coeff for K-means algorithm: ", jaccard)
+data_pca = pca(data)
 plot_pca(data_pca, clusters, filename)
+plot_pca(data_pca, global_truth, filename)
 
 # print(clusters)
 # print(CENTROIDS)
