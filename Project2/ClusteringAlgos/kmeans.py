@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-
+import random
 
 def readfile(filename):
     data = pd.read_csv(filename, header=None, sep="\t")
@@ -24,11 +24,19 @@ def process_input(data):
 
 def choose_initial_centroids(data, num_clusters):
 	#random initialization for centres
-	return np.random.permutation(data)[:num_clusters]
+	samples = random.sample(range(0, data.shape[0]), num_clusters)
+	print(samples)
+	print(data[samples,:])
+	return data[samples,:]
 	# print(CENTROIDS.shape)
-
-# def choose_initial_centroids2(data, num_clusters):
-
+def choose_initial_centroids_by_ids(centre_ids, ids, data, num_clusters):
+	CENTROIDS = np.empty((num_clusters, data.shape[1]))
+	for i,id_val in enumerate(centre_ids):
+		for j,point in enumerate(data):
+			if ids[j] == id_val:
+				CENTROIDS[i] = data[j]
+				break
+	return CENTROIDS
 def distance(point1, point2):
 	#Similarity measure between two data points i.e. euclidean distance
 	return math.sqrt(np.sum(np.square(point1 - point2)))
@@ -54,7 +62,9 @@ def process_kmeans(data, centroids, num_clusters):
 	clusters = [0] * data.shape[0]
 	#check for change in cluster membership
 	previous_clusters = None
-	while(previous_clusters != clusters):
+	max_iters,iters = 100, 0
+	while(previous_clusters != clusters and iters < max_iters):
+		iters += 1
 		previous_clusters = clusters
 		#for each datapoint
 		for j, gene in enumerate(data):	
@@ -65,7 +75,7 @@ def process_kmeans(data, centroids, num_clusters):
 				if(dist < min_dist):
 					min_dist = dist
 					clusters[j] = i + 1
-		temp_centroids = np.empty((num_clusters, data.shape[1]), dtype=np.float32)		
+		temp_centroids = np.empty((num_clusters, data.shape[1]), dtype=np.float64)		
 		for i, centre in enumerate(centroids):
 			#associate each datapoint with a cluster
 			cluster_members = []

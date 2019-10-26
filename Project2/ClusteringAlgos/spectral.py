@@ -30,7 +30,7 @@ def is_sym(a):
     return np.allclose(a, a.T, rtol=n_data, atol=n_data)
 
 
-def knn(attr, sigma):
+def fully_connected_graph(attr, sigma):
     wt = np.zeros((n_data, n_data))
     for i in range(n_data):
         for j in range(i, n_data):
@@ -56,27 +56,38 @@ def get_diag(W):
 
     for i in range(n_data):
         d[i][i] = np.sum(W[i])
-
+    print(d)
     return d
 
 
 def get_adjacency_matrix(attr, sigma):
     w = np.zeros((n_data, n_data))
     k = 10
-    w = knn(attr, sigma)
-
+    w = fully_connected_graph(attr, sigma)
     return w
 
-def getNbyKMatrix(k, eigen_map, eig_val):
+def getNbyKMatrix(eigen_map, eig_val):
+    k = max_eigen_gap_num(eig_val)
     eig_val = np.sort(eig_val)
+    print(" k is ", k)
     reduced_data = np.empty((n_data, k))
     for i in range(k):
         reduced_data[:,i] = eigen_map[eig_val[i]]
     return reduced_data
 
+def max_eigen_gap_num(eigen_val):
+    max_gap = -999999
+    k = 0
+    for i in range(len(eigen_val) - 1):
+        diff = abs(eigen_val[i] - eig_val[i + 1])
+        if (diff > max_gap):
+            max_gap = diff
+            k = i + 2  #index at zero
+    return k
+
 filename = '../iyer.txt'
-# filename = 'iyer.txt'
-sigma = 2.0
+# filename = '../cho.txt'
+sigma = 2
 data = readfile(filename)
 init_param(data)
 
@@ -91,12 +102,13 @@ print(sym)
 
 eig_val, eig_vec = eigh(L)
 
+
 eigen_map = dict()
 
 for i in range (len(eig_val)):
     eigen_map[eig_val[i]] = eig_vec[:,i]
 
-reduced_data = getNbyKMatrix(no_of_cluster, eigen_map, eig_val)
+reduced_data = getNbyKMatrix(eigen_map, eig_val)
 
 res = np.zeros((no_of_cluster, reduced_data.shape[1]))
 for i in range(20): 
@@ -106,9 +118,10 @@ for i in range(20):
 #reassign centroids with average of all the runs
 CENTROIDS = res/20
 #run k means final time
-clusters = process_kmeans(reduced_data, CENTROIDS, no_of_cluster)
-# clusters  = KMeans(n_clusters=no_of_cluster, init='random', n_init = 20).fit_predict(data)
 
+# clusters = process_kmeans(reduced_data, CENTROIDS, no_of_cluster)
+clusters  = KMeans(n_clusters=no_of_cluster, init='random', n_init = 20).fit_predict(reduced_data)
+print(clusters)
 global_truth = data[:,1]
 ids = data[:,0]
 cluster_group = get_cluster_group(ids, clusters)
