@@ -34,9 +34,9 @@ def fully_connected_graph(attr, sigma):
     wt = np.zeros((n_data, n_data))
     for i in range(n_data):
         for j in range(i, n_data):
-            if i == j:
-                wt[i][j] = 0
-            else:
+            # if i == j:
+            #     wt[i][j] = 0
+            # else:
                 wt[i][j] = np.exp(-1 * np.sum(((attr[i] - attr[j]) ** 2)) / (sigma ** 2))
                 wt[j][i] = wt[i][j]
 
@@ -85,7 +85,7 @@ def max_eigen_gap_num(eigen_val):
             k = i + 2  #index at zero
     return k
 
-filename = '../iyer.txt'
+filename = '../cho.txt'
 # filename = '../cho.txt'
 sigma = 2
 data = readfile(filename)
@@ -110,13 +110,13 @@ for i in range (len(eig_val)):
 
 reduced_data = getNbyKMatrix(eigen_map, eig_val)
 
-res = np.zeros((no_of_cluster, reduced_data.shape[1]))
-for i in range(20): 
-    CENTROIDS = choose_initial_centroids(reduced_data, no_of_cluster)
-    clusters = process_kmeans(reduced_data, CENTROIDS, no_of_cluster)
-    res = np.add(res, CENTROIDS)
-#reassign centroids with average of all the runs
-CENTROIDS = res/20
+# res = np.zeros((no_of_cluster, reduced_data.shape[1]))
+# for i in range(20): 
+#     CENTROIDS = choose_initial_centroids(reduced_data, no_of_cluster)
+#     clusters = process_kmeans(reduced_data, CENTROIDS, no_of_cluster)
+#     res = np.add(res, CENTROIDS)
+# #reassign centroids with average of all the runs
+# CENTROIDS = res/20
 #run k means final time
 
 # clusters = process_kmeans(reduced_data, CENTROIDS, no_of_cluster)
@@ -136,7 +136,7 @@ jaccard = categories[1][1] / (categories[1][0] + categories[0][1] + categories[1
 
 print("Rand Coeff for K-means algorithm: ", rand)
 print("Jaccard Coeff for K-means algorithm: ", jaccard)
-data_pca = pca(data)
+data_pca = pca(attr)
 plot_pca(data_pca, clusters, filename)
 plot_pca(data_pca, global_truth, filename)
 
