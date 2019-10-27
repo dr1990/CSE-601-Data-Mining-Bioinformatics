@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from numpy import linalg as la
 from scipy.stats import multivariate_normal
+from index import get_cluster_group, get_incidence_matrix, get_categories
+import collections
 
 import matplotlib.pyplot as plt
 
@@ -66,7 +68,7 @@ def init_param(data):
     global mu
     global cov
 
-    niter = 55
+    niter = 50
     attr = data[:, 2:]
     dim = np.shape(data)[1] - 2
     n_data = np.shape(data)[0]
@@ -81,8 +83,7 @@ def init_param(data):
 
     cov = np.zeros((no_of_cluster, dim, dim), dtype='float')
     for i in range(no_of_cluster):
-        np.fill_diagonal(cov[i], 4)
-    print()
+        np.fill_diagonal(cov[i], 1)
 
 
 def readfile(filename):
@@ -93,8 +94,7 @@ def readfile(filename):
     for i in range(data.shape[0]):
         if data[i, 1] != -1:
             ret.append(data[i])
-        else:
-            print()
+
     out = np.array(ret)
     return out
 
@@ -104,7 +104,6 @@ def EM1(mu, cov, pi):
 
     for _ in range(niter):
         # E-Step
-
         pdf = np.zeros((n_data, no_of_cluster))
         for k in range(no_of_cluster):
             rvk = multivariate_normal(mu[k], cov[k], allow_singular=True)
@@ -175,6 +174,24 @@ def EM(mu, cov, pi):
     return r, mu, cov, pi
 
 
+def coef(gmm_truth):
+    id = np.array(data[:, 0], dtype='int')
+    ground_truth = np.array(data[:, 1], dtype='int')
+    cluster_group = get_cluster_group(id, ground_truth)
+    cluster_group = collections.OrderedDict(sorted(cluster_group.items()))
+    incidence_matrix_gt = get_incidence_matrix(ground_truth, cluster_group)
+    cluster_group_gmm = get_cluster_group(id, gmm_truth)
+    cluster_group_gmm = collections.OrderedDict(sorted(cluster_group_gmm.items()))
+    incidence_matrix_gmm = get_incidence_matrix(gmm_truth, cluster_group_gmm)
+    categories = get_categories(incidence_matrix_gt, incidence_matrix_gmm)
+
+    rand = (categories[0][0] + categories[1][1]) / np.sum(categories)
+    jaccard = categories[1][1] / (categories[1][0] + categories[0][1] + categories[1][1])
+
+    print("Rand: ", rand)
+    print("Jaccard: ", jaccard)
+
+
 # filename = 'cho.txt'
 filename = 'iyer.txt'
 data = readfile(filename)
@@ -189,5 +206,6 @@ data_pca = pca(data[:, 2:])
 
 orig_label = data[:, 1]
 
-plot_pca(data_pca, lab[0], filename)
-plot_pca(data_pca, orig_label, filename)
+coef(lab[0])
+# plot_pca(data_pca, lab[0], filename)
+# plot_pca(data_pca, orig_label, filename)
