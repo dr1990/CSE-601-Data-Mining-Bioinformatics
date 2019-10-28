@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cdist
-from collections import deque
+from collections import deque, OrderedDict
 from pprint import pprint
 import seaborn as sb
 from matplotlib import pyplot
+from ClusteringAlgos.index import get_cluster_group, get_incidence_matrix, get_categories
 
 from ClusteringAlgos import pca
 
@@ -12,11 +13,11 @@ from ClusteringAlgos import pca
 fileName = 'cho.txt'
 data = pd.read_csv("../../" + fileName, sep="\t", index_col=0, header=None)
 
-data_labels = data[1]  # ground truth values
+data_ground_truth = data[1]  # ground truth values
 del data[1]  # deleting the truth values column
 geneIds = data.index
 
-# cluster assignment for every datapoint -> initially all datapoints are assigned cluster -1 (noise)
+# cluster assignment for every datapoint (initially all datapoints are assigned cluster -1 i.e. noise)
 clusterMap = {x: -1 for x in data.index}
 
 data = data.values  # converting Dataframe into a numpy array
@@ -70,13 +71,31 @@ def regionQuery(P, eps):
 
     return neighbourPoints
 
+
+def validate(DBSCAN_clusters):
+    cluster_group = get_cluster_group(geneIds, list(data_ground_truth))
+    cluster_group = OrderedDict(sorted(cluster_group.items()))
+    incidence_matrix_gt = get_incidence_matrix(data_ground_truth, cluster_group)
+    cluster_group_DBSCAN = get_cluster_group(geneIds, DBSCAN_clusters)
+    cluster_group_DBSCAN = OrderedDict(sorted(cluster_group_DBSCAN.items()))
+    incidence_matrix_gmm = get_incidence_matrix(DBSCAN_clusters, cluster_group_DBSCAN)
+    categories = get_categories(incidence_matrix_gt, incidence_matrix_gmm)
+
+    rand = (categories[0][0] + categories[1][1]) / np.sum(categories)
+    jaccard = categories[1][1] / (categories[1][0] + categories[0][1] + categories[1][1])
+
+    print("Rand: ", rand)
+    print("Jaccard: ", jaccard)
+
+
 DBSCAN(1.03, 4)
 pprint(clusterMap)
 
 pca_data = pca.pca(data[1:,:])
 pca_data_df = pd.DataFrame(pca_data, columns=['x','y'], index=geneIds)
-pca_data_df['labels_GT'] = data_labels
+pca_data_df['labels_GT'] = data_ground_truth
 pca_data_df['labels_DBSCAN'] = list(clusterMap.values())
+
 plot1 = sb.scatterplot(data= pca_data_df, x='x', y='y', hue='labels_GT', legend='full', palette='Accent', marker='x')
 plot1.set_title(fileName + ' Ground Truth')
 pyplot.show()
@@ -85,3 +104,4 @@ plot2 = sb.scatterplot(data= pca_data_df, x = 'x', y= 'y', hue='labels_DBSCAN', 
 plot2.set_title('Clusters formed using DBSCAN on ' + fileName)
 pyplot.show()
 
+validate(list(clusterMap.values()))

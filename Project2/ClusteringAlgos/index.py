@@ -17,7 +17,7 @@ def write(data):
         f.write("\n")
     f.close()
 
-
+# Creates the incidence matrix indicating the similarity of cluster assignments to each datapoint
 def get_incidence_matrix(ground_truth, cluster_group):
     n = len(ground_truth)
     incidence_matrix = np.zeros((n, n), dtype='int')
@@ -32,7 +32,9 @@ def get_incidence_matrix(ground_truth, cluster_group):
     return incidence_matrix
 
 
-
+# Creates a map of cluster numbers (key) to gene_ids (values)
+# id - gene ids in the data set
+# ground_truth - cluster numbers
 def get_cluster_group(id, ground_truth):
     cluster_group = dict()
     for i in range(len(id)):
@@ -44,7 +46,8 @@ def get_cluster_group(id, ground_truth):
         cluster_group[ground_truth[i]] = values
     return cluster_group
 
-
+# Takes 2 maps (cluster number -> gene_ids) and computes a 2x2 matrix
+# to indicate TP, FP, TN, FN
 def get_categories(im_a, im_b):
     categories = [[0, 0], [0, 0]]
 
