@@ -1,18 +1,20 @@
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cdist
+from collections import OrderedDict
 from pprint import pprint
 import seaborn as sb
 from matplotlib import pyplot
 from ClusteringAlgos import pca
+from ClusteringAlgos.index import get_cluster_group, get_incidence_matrix, get_categories
 
 fileName = 'iyer.txt'
 # fileName= 'cho.txt'
 data = pd.read_csv("../../" + fileName, sep="\t", index_col=0, header=None)
 
 # data = data[~(data[1] == -1)]  # removing outliers (-1 rows)
-data_labels = data[1]  # ground truth values
-cluster_count = data_labels.max()
+data_ground_truth = data[1]  # ground truth values
+cluster_count = data_ground_truth.max()
 geneIds = data.index  # row numbers
 del data[1]  # deleting the truth values column
 
@@ -51,6 +53,21 @@ while (rowCount != cluster_count):
     del clusters[geneId_map.get(y)]
     rowCount -= 1
 
+def validate(HAC_clusters):
+    cluster_group = get_cluster_group(geneIds, list(data_ground_truth))
+    cluster_group = OrderedDict(sorted(cluster_group.items()))
+    incidence_matrix_gt = get_incidence_matrix(data_ground_truth, cluster_group)
+    cluster_group_DBSCAN = get_cluster_group(geneIds, HAC_clusters)
+    cluster_group_DBSCAN = OrderedDict(sorted(cluster_group_DBSCAN.items()))
+    incidence_matrix_gmm = get_incidence_matrix(HAC_clusters, cluster_group_DBSCAN)
+    categories = get_categories(incidence_matrix_gt, incidence_matrix_gmm)
+
+    rand = (categories[0][0] + categories[1][1]) / np.sum(categories)
+    jaccard = categories[1][1] / (categories[1][0] + categories[0][1] + categories[1][1])
+
+    print("Rand: ", rand)
+    print("Jaccard: ", jaccard)
+
 pprint(clusters)
 
 clusterMap = dict()
@@ -68,7 +85,7 @@ for k,v in clusterMap.items():
 
 pca_data = pca.pca(data)
 pca_data_df = pd.DataFrame(pca_data, columns=['x','y'], index=geneIds)
-pca_data_df['labels_GT'] = data_labels
+pca_data_df['labels_GT'] = data_ground_truth
 pca_data_df['labels_HAC'] = clusterIds
 
 plot1 = sb.scatterplot(data= pca_data_df, x='x', y='y', hue='labels_GT', legend='full', palette='Accent', marker='x')
@@ -79,3 +96,4 @@ plot2 = sb.scatterplot(data= pca_data_df, x = 'x', y= 'y', hue='labels_HAC', leg
 plot2.set_title('Clusters formed using HAC on ' + fileName)
 pyplot.show()
 
+validate(clusterIds)
