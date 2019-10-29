@@ -17,7 +17,7 @@ data_ground_truth = data[1]  # ground truth values
 del data[1]  # deleting the truth values column
 geneIds = data.index
 
-# cluster assignment for every datapoint (initially all datapoints are assigned cluster -1 i.e. noise)
+# Cluster assignment for every datapoint (initially all datapoints are assigned cluster -1 i.e. noise)
 clusterMap = {x: -1 for x in data.index}
 
 data = data.values  # converting Dataframe into a numpy array
@@ -27,7 +27,8 @@ data = data.values  # converting Dataframe into a numpy array
 # data = (data - data.mean()) / (data.max() - data.min())
 # print(data)
 
-data = np.vstack((np.zeros((1, data.shape[1])), data))  # appending a row at the 0th index
+# Appending a row at the 0th index
+data = np.vstack((np.zeros((1, data.shape[1])), data))
 
 visited = set()
 
@@ -48,6 +49,11 @@ def DBSCAN(eps, minPts):
 
 
 # Method that expands the cluster to neighbouring points
+# P - datapoint id
+# neighbourPoints - Set containing ids of datapoints within 'eps' distance of point P
+# eps - Epsilon distance
+# C - current cluster number
+# minPts - Minimum points in the cluster
 def expandCluster(P, neighbourPoints, C, eps, minPts):
     clusterMap[P] = C
     while len(neighbourPoints) != 0:
@@ -60,10 +66,13 @@ def expandCluster(P, neighbourPoints, C, eps, minPts):
         if clusterMap[nPoint] == -1:
             clusterMap[nPoint] = C
 
-
+# Method to find all the points within 'eps' distance of datapoint 'P'
+# P - datapoint under consideration
+# - Epsilon distance
 def regionQuery(P, eps):
     neighbourPoints = deque()
 
+    # Calculating the Euclidean distance datapoint P w.r.t. all datapoints
     distVector = cdist(data, data[P].reshape(1, -1), metric='euclidean')
     for i in geneIds:
         if (distVector[i] <= eps):
@@ -71,7 +80,7 @@ def regionQuery(P, eps):
 
     return neighbourPoints
 
-
+# Validation of assigned cluster using RAND and Jaccard coefficients
 def validate(DBSCAN_clusters):
     cluster_group = get_cluster_group(geneIds, list(data_ground_truth))
     cluster_group = OrderedDict(sorted(cluster_group.items()))
@@ -91,6 +100,10 @@ def validate(DBSCAN_clusters):
 DBSCAN(1.03, 4)
 pprint(clusterMap)
 
+validate(list(clusterMap.values()))
+
+
+# Plotting data (ground truth & realized clusters)
 pca_data = pca.pca(data[1:,:])
 pca_data_df = pd.DataFrame(pca_data, columns=['x','y'], index=geneIds)
 pca_data_df['labels_GT'] = data_ground_truth
@@ -104,4 +117,4 @@ plot2 = sb.scatterplot(data= pca_data_df, x = 'x', y= 'y', hue='labels_DBSCAN', 
 plot2.set_title('Clusters formed using DBSCAN on ' + fileName)
 pyplot.show()
 
-validate(list(clusterMap.values()))
+
