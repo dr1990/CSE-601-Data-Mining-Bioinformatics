@@ -9,8 +9,8 @@ from ClusteringAlgos.index import get_cluster_group, get_incidence_matrix, get_c
 
 from ClusteringAlgos import pca
 
-# fileName = 'iyer.txt'
-fileName = 'cho.txt'
+fileName = 'iyer.txt'
+# fileName = 'cho.txt'
 data = pd.read_csv("../../" + fileName, sep="\t", index_col=0, header=None)
 
 data_ground_truth = data[1]  # ground truth values
@@ -93,7 +93,7 @@ def validate(DBSCAN_clusters):
     rand = (categories[0][0] + categories[1][1]) / np.sum(categories)
     jaccard = categories[1][1] / (categories[1][0] + categories[0][1] + categories[1][1])
 
-    print("Rand: ", rand)
+    print("RAND: ", rand)
     print("Jaccard: ", jaccard)
 
 
