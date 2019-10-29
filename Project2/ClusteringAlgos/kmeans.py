@@ -25,18 +25,11 @@ def process_input(data):
 def choose_initial_centroids(data, num_clusters):
 	#random initialization for centres
 	samples = random.sample(range(0, data.shape[0]), num_clusters)
-	print(samples)
-	print(data[samples,:])
 	return data[samples,:]
 	# print(CENTROIDS.shape)
-def choose_initial_centroids_by_ids(centre_ids, ids, data, num_clusters):
-	CENTROIDS = np.empty((num_clusters, data.shape[1]))
-	for i,id_val in enumerate(centre_ids):
-		for j,point in enumerate(data):
-			if ids[j] == id_val:
-				CENTROIDS[i] = data[j]
-				break
-	return CENTROIDS
+def choose_initial_centroids_by_ids(centre_ids, data):
+	return data[centre_ids,:]
+	
 def distance(point1, point2):
 	#Similarity measure between two data points i.e. euclidean distance
 	return math.sqrt(np.sum(np.square(point1 - point2)))
@@ -57,13 +50,13 @@ def get_point_with_max_sse(data, centre):
 			maxp = dist
 			maxssse_point = point
 	return maxssse_point
-def process_kmeans(data, centroids, num_clusters):
+def process_kmeans(data, centroids, num_clusters, n_iters):
 	#clusters is an array such that clusters[i] = j means that ith data object belongs to j
 	clusters = [0] * data.shape[0]
 	#check for change in cluster membership
 	previous_clusters = None
-	max_iters,iters = 100, 0
-	while(previous_clusters != clusters and iters < max_iters):
+	max_iters,iters = n_iters, 0
+	while(previous_clusters != clusters or iters == max_iters):
 		iters += 1
 		previous_clusters = clusters
 		#for each datapoint
@@ -92,7 +85,7 @@ def process_kmeans(data, centroids, num_clusters):
 		centroids = temp_centroids
 	# print(previous_clusters)
 	# print(clusters)
-	return clusters
+	return clusters, centroids
 
 def plot_pca(pca, label, file):
     distinct_lable = set([])

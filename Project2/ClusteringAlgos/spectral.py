@@ -1,6 +1,8 @@
 from pprint import pprint
+from index import get_cluster_group, get_incidence_matrix, get_categories
 from numpy.linalg import eigh
-from kmeans import *
+from kmeans import choose_initial_centroids_by_ids, plot_pca
+from pca import pca
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -13,7 +15,7 @@ def readfile(filename):
     return data
 
 
-def init_param(data):
+def init_param(data, num_clusters):
     global attr
     global dim
     global n_data
@@ -24,7 +26,10 @@ def init_param(data):
     dim = np.shape(data)[1] - 2
     n_data = np.shape(data)[0]
     clusters = set(np.array(data[:, 1], dtype='int'))
-    no_of_cluster = len(clusters) if -1 not in clusters else len(clusters) - 1
+    if num_clusters:
+        no_of_cluster = num_clusters
+    else:
+        no_of_cluster = len(clusters) if -1 not in clusters else len(clusters) - 1
 
 def is_sym(a):
     return np.allclose(a, a.T, rtol=n_data, atol=n_data)
@@ -47,7 +52,6 @@ def fully_connected_graph(attr, sigma):
     #             wt[i][j] = 0.0
 
     sym = is_sym(wt)
-    print(sym)
     return wt
 
 
@@ -56,7 +60,6 @@ def get_diag(W):
 
     for i in range(n_data):
         d[i][i] = np.sum(W[i])
-    print(d)
     return d
 
 
@@ -69,7 +72,6 @@ def get_adjacency_matrix(attr, sigma):
 def getNbyKMatrix(eigen_map, eig_val):
     k = max_eigen_gap_num(eig_val)
     eig_val = np.sort(eig_val)
-    print(" k is ", k)
     reduced_data = np.empty((n_data, k))
     for i in range(k):
         reduced_data[:,i] = eigen_map[eig_val[i]]
@@ -85,11 +87,16 @@ def max_eigen_gap_num(eigen_val):
             k = i + 2  #index at zero
     return k
 
-filename = '../cho.txt'
+filename = 'new_dataset_1.txt'
 # filename = '../cho.txt'
 sigma = 2
+num_clusters = 3
+choice = "random"
+centers = [10, 25, 44]
+max_iters = 100
+
 data = readfile(filename)
-init_param(data)
+init_param(data, num_clusters)
 
 W = get_adjacency_matrix(attr, sigma)
 
@@ -98,7 +105,7 @@ D = get_diag(W)
 L = np.reshape((D - W), (n_data, n_data))
 
 sym = is_sym(L)
-print(sym)
+
 
 eig_val, eig_vec = eigh(L)
 
@@ -109,19 +116,11 @@ for i in range (len(eig_val)):
     eigen_map[eig_val[i]] = eig_vec[:,i]
 
 reduced_data = getNbyKMatrix(eigen_map, eig_val)
-
-# res = np.zeros((no_of_cluster, reduced_data.shape[1]))
-# for i in range(20): 
-#     CENTROIDS = choose_initial_centroids(reduced_data, no_of_cluster)
-#     clusters = process_kmeans(reduced_data, CENTROIDS, no_of_cluster)
-#     res = np.add(res, CENTROIDS)
-# #reassign centroids with average of all the runs
-# CENTROIDS = res/20
-#run k means final time
-
-# clusters = process_kmeans(reduced_data, CENTROIDS, no_of_cluster)
-clusters  = KMeans(n_clusters=no_of_cluster, init='random', n_init = 20).fit_predict(reduced_data)
-print(clusters)
+if choice == "hard":
+    init = choose_initial_centroids_by_ids(centers, reduced_data)
+else:
+    init = "random"
+clusters  = KMeans(n_clusters=no_of_cluster, init=init, n_init = 20, max_iter=max_iters).fit_predict(reduced_data)
 global_truth = data[:,1]
 ids = data[:,0]
 cluster_group = get_cluster_group(ids, clusters)
