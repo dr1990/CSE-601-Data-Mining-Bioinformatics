@@ -9,12 +9,17 @@ from ClusteringAlgos.index import get_cluster_group, get_incidence_matrix, get_c
 
 from ClusteringAlgos import pca
 
-fileName = 'iyer.txt'
-# fileName = 'cho.txt'
-data = pd.read_csv("../../" + fileName, sep="\t", index_col=0, header=None)
+# fileName = 'iyer.txt'
+fileName = 'cho.txt'
+# fileName = 'dbscan_tab_seperated.txt'
+data = pd.read_csv("../" + fileName, sep="\t", index_col=0, header=None)
 
 data_ground_truth = data[1]  # ground truth values
 del data[1]  # deleting the truth values column
+
+# We only perform PCA if the number of attributes is greater than 2
+performPCA = data.shape[1] > 2
+
 geneIds = data.index
 
 # Cluster assignment for every datapoint (initially all datapoints are assigned cluster -1 i.e. noise)
@@ -96,24 +101,30 @@ def validate(DBSCAN_clusters):
     print("RAND: ", rand)
     print("Jaccard: ", jaccard)
 
-
-DBSCAN(1.03, 4)
+eps = float(input('Enter eps value - '))
+minPts = int(input('Enter minPts value - '))
+# DBSCAN(1.3, 16)       # for cho.txt
+# DBSCAN(1, 4)          # for iyer.txt
+DBSCAN(eps, minPts)
 pprint(clusterMap)
 
 validate(list(clusterMap.values()))
 
 
 # Plotting data (ground truth & realized clusters)
-pca_data = pca.pca(data[1:,:])
-pca_data_df = pd.DataFrame(pca_data, columns=['x','y'], index=geneIds)
-pca_data_df['labels_GT'] = data_ground_truth
-pca_data_df['labels_DBSCAN'] = list(clusterMap.values())
+if performPCA:
+    plot_data = pca.pca(data[1:, :])
+else:
+    plot_data = data[1:, :]
+plot_data_df = pd.DataFrame(plot_data, columns=['x','y'], index=geneIds)
+plot_data_df['labels_GT'] = data_ground_truth
+plot_data_df['labels_DBSCAN'] = list(clusterMap.values())
 
-plot1 = sb.scatterplot(data= pca_data_df, x='x', y='y', hue='labels_GT', legend='full', palette='Accent', marker='x')
+plot1 = sb.scatterplot(data= plot_data_df, x='x', y='y', hue='labels_GT', legend='full', palette='rainbow_r', marker='x')
 plot1.set_title(fileName + ' Ground Truth')
 pyplot.show()
 
-plot2 = sb.scatterplot(data= pca_data_df, x = 'x', y= 'y', hue='labels_DBSCAN', legend='full', palette='Accent', marker='x')
+plot2 = sb.scatterplot(data= plot_data_df, x = 'x', y= 'y', hue='labels_DBSCAN', legend='full', palette='rainbow_r', marker='x')
 plot2.set_title('Clusters formed using DBSCAN on ' + fileName)
 pyplot.show()
 

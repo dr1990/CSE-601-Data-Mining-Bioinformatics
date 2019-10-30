@@ -8,8 +8,8 @@ from matplotlib import pyplot
 from ClusteringAlgos import pca
 from ClusteringAlgos.index import get_cluster_group, get_incidence_matrix, get_categories
 
-# fileName = 'iyer.txt'
-fileName= 'cho.txt'
+fileName = 'iyer.txt'
+# fileName= 'cho.txt'
 data = pd.read_csv("../../" + fileName, sep="\t", index_col=0, header=None)
 
 # data = data[~(data[1] == -1)]  # removing outliers (-1 rows)
