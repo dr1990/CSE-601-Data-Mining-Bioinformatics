@@ -138,50 +138,54 @@ def read_input():
     global conv_threshold
     global max_iter
 
-    # mu = numpy.array(json.loads(input("Enter mean: ")))
-    # cov = numpy.array(json.loads(input("Enter cov: ")))
-    # pi = numpy.array(json.loads(input("Enter pi: ")))
-    # no_of_cluster = int(input("Enter no. of cluster: "))
-    # niter = int(input("Enter max iteration: "))
-    # conv_threshold = float(input("Enter convergence threshold: "))
-    # smoothing_value = float(input("Enter smoothing value: "))
+    cli = input("Read Input (Y or N)? : ")
 
-    # smoothing_value = 0
-    # initialize parameters
-
-    # # mu = np.array([[0, 0], [0, 4], [4, 4]])
-    # mu = np.array([[0, 0], [1, 1]])
-    # # cov = np.array([[[1, 1], [1, 1]], [[2, 2], [2, 2]], [[3, 3], [3, 3]]])
-    # cov = np.array([[[1, 1], [1, 1]], [[2, 2], [2, 2]]])
-    # pi = np.array([0.1, 0.1, 0.1, 0.1, 0.1,0.1, 0.1, 0.1, 0.1, 0.1])
-
-    max_iter = 1000
     attr = data[:, 2:]
-    smoothing_value = 0.000000001
-    conv_threshold = 0.000000001
-    niter = 100
-    clusters = set(np.array(data[:, 1], dtype='int'))
-    no_of_cluster = len(clusters) if -1 not in clusters else len(clusters) - 1
-
     dim = np.shape(data)[1] - 2
     n_data = np.shape(data)[0]
-
     np.random.seed(4000)
 
-    rand_data = np.random.choice(n_data, no_of_cluster, replace=False)
-    mu = attr[rand_data]
+    if cli == 'Y':
+        mu = numpy.array(json.loads(input("Enter mean: ")))
+        cov = numpy.array(json.loads(input("Enter cov: ")))
+        pi = numpy.array(json.loads(input("Enter pi: ")))
+        no_of_cluster = int(input("Enter no. of cluster: "))
+        max_iter = int(input("Enter max iteration: "))
+        conv_threshold = float(input("Enter convergence threshold: "))
+        smoothing_value = float(input("Enter smoothing value: "))
+        niter = 1
+        # smoothing_value = 0
+        # initialize parameters
 
-    pi = np.ones(no_of_cluster, dtype='float64') / no_of_cluster
+        # # mu = np.array([[0, 0], [0, 4], [4, 4]])
+        # mu = np.array([[0, 0], [1, 1]])
+        # # cov = np.array([[[1, 1], [1, 1]], [[2, 2], [2, 2]], [[3, 3], [3, 3]]])
+        # cov = np.array([[[1, 1], [1, 1]], [[2, 2], [2, 2]]])
+        # pi = np.array([0.3333, 0.3333, 0.3333])
 
-    cov = np.zeros((no_of_cluster, dim, dim), dtype='float64')
-    for i in range(no_of_cluster):
-        # cov[i] = i + 1
-        np.fill_diagonal(cov[i], 1)
+    else:
+        max_iter = 1000
+
+        smoothing_value = 0.000000001
+        conv_threshold = 0.000000001
+
+        clusters = set(np.array(data[:, 1], dtype='int'))
+        no_of_cluster = len(clusters) if -1 not in clusters else len(clusters) - 1
+        niter = 100
+        rand_data = np.random.choice(n_data, no_of_cluster, replace=False)
+        mu = attr[rand_data]
+
+        pi = np.ones(no_of_cluster, dtype='float64') / no_of_cluster
+
+        cov = np.zeros((no_of_cluster, dim, dim), dtype='float64')
+        for i in range(no_of_cluster):
+            # cov[i] = i + 1
+            np.fill_diagonal(cov[i], 1)
 
 
 # filename = 'cho.txt'
-# filename = 'iyer.txt'
-filename = 'GMM_tab_seperated.txt'
+filename = 'iyer.txt'
+# filename = 'GMM_tab_seperated.txt'
 
 data = readfile(filename)
 read_input()
