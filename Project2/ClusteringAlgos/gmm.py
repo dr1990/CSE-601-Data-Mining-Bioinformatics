@@ -3,7 +3,10 @@ import pandas as pd
 from numpy import linalg as la
 from scipy.stats import multivariate_normal
 from index import get_cluster_group, get_incidence_matrix, get_categories
+from pca import pca
 import collections
+import json
+import numpy
 
 import matplotlib.pyplot as plt
 
@@ -29,85 +32,28 @@ def plot_pca(pca, label, file):
         y = [float(k) for (t, k) in enumerate(pca[:, 1]) if label[t] == key]
         plt.scatter(x, y, c=color[value], label=str(key))
 
-    plt.title("Scatter Plot for " + file + ". Algorithm: PCA")
+    plt.title("Scatter Plot for " + file + ". Algorithm: GMM")
     plt.legend()
     plt.show()
 
 
-def pca(data):
-    # Get mean along each dimension
-    mean = np.mean(data, axis=0)
-
-    # Adjust the data around mean
-    adj_data = data - mean
-
-    # find co-variance matrix
-    cov = np.cov(adj_data.T)
-
-    # Get eigen-value and eigen-vector of the co-variance matrix
-    eig_val, eig_vec = la.eig(cov)
-
-    # Pick top-two eigen-value and corresponding eigen-vector
-    top_ind = eig_val.argsort()[-2:][::-1]
-    top_eig_vec = eig_vec[:, top_ind]
-
-    p = np.zeros([data.shape[0], top_eig_vec.shape[1]])
-
-    p = np.dot(top_eig_vec.T, adj_data.T).T
-    return p
-
-
-def init_param(data):
-    global niter
-    global attr
-    global dim
-    global n_data
-    global clusters
-    global no_of_cluster
-    global pi
-    global mu
-    global cov
-
-    niter = 50
-    attr = data[:, 2:]
-    dim = np.shape(data)[1] - 2
-    n_data = np.shape(data)[0]
-    clusters = set(np.array(data[:, 1], dtype='int'))
-    no_of_cluster = len(clusters) if -1 not in clusters else len(clusters) - 1
-
-    # initialize parameters
-    np.random.seed(4000)
-    rand_data = np.random.choice(n_data, no_of_cluster, replace=False)
-    mu = attr[rand_data]
-    pi = np.ones(no_of_cluster, dtype='float') / no_of_cluster
-
-    cov = np.zeros((no_of_cluster, dim, dim), dtype='float')
-    for i in range(no_of_cluster):
-        np.fill_diagonal(cov[i], 1)
-
-
 def readfile(filename):
-    data = pd.read_csv(filename, header=None, sep="\t")
-    data = np.array(data.values)
-
-    ret = []
-    for i in range(data.shape[0]):
-        if data[i, 1] != -1:
-            ret.append(data[i])
-
-    out = np.array(ret)
-    return out
+    d = pd.read_csv(filename, header=None, sep="\t")
+    d = np.array(d.values)
+    return d
 
 
-def EM1(mu, cov, pi):
+def EM(mu, cov, pi):
     r = np.zeros((n_data, no_of_cluster))
+    ll = 0
+    prev_ll = -9999999999
 
     for _ in range(niter):
+
         # E-Step
         pdf = np.zeros((n_data, no_of_cluster))
         for k in range(no_of_cluster):
-            rvk = multivariate_normal(mu[k], cov[k], allow_singular=True)
-            t = rvk.pdf(attr)
+            t = multivariate_normal(mu[k], cov[k], allow_singular=True).pdf(attr)
             t = pi[k] * np.reshape(t, (-1, 1))
             pdf[:, k] = t.T
 
@@ -116,61 +62,41 @@ def EM1(mu, cov, pi):
             sm += pdf[:, k] * pi[k]
 
         for k in range(no_of_cluster):
-            r[:, k] = (pdf[:, k] * pi[k]) / sm
-
-        # M-Step
+            r[:, k] = (pdf[:, k] * pi[k]) / (sm + smoothing_value)
 
         pi = np.sum(r, axis=0) / attr.shape[0]
-        # print(pi)
 
         N_K = np.sum(r, axis=0)
 
         mu = np.dot(r.T, attr)
         for t in range(no_of_cluster):
-            mu[t] = mu[t] / N_K[t]
+            mu[t] = mu[t] / (N_K[t] + smoothing_value)
 
         # covariance
         for k in range(no_of_cluster):
             diff = (attr - mu[k])
             sm = np.dot(r[:, k] * diff.T, diff)
-            cov[k] = sm / N_K[k]
+            cov[k] = sm / (N_K[k] + smoothing_value)
 
-    return r, mu, cov, pi
+        # ll = 0
+        # for k in range(no_of_cluster):
+        #     ll += np.log(np.sum(pi[k] * (multivariate_normal(mu[k], cov[k], allow_singular=True).pdf(attr))))
 
+        # ll = np.sum(np.sum(r))
 
-def EM(mu, cov, pi):
-    r = np.zeros((n_data, no_of_cluster))
-    for _ in range(niter):
+        # if (ll - prev_ll) < conv_threshold:
+        #     break
 
-        # E-Step
-        for i in range(n_data):
-            denom = 0
-            mv = np.zeros(no_of_cluster)
-            for k in range(no_of_cluster):
-                mv[k] = multivariate_normal.pdf(attr[i], mean=mu[k], cov=cov[k], allow_singular=True)
-            for k in range(no_of_cluster):
-                r[i][k] = pi[k] * mv[k] / np.sum(mv)
+        # print(_, ll, prev_ll, (ll - prev_ll))
+        # prev_ll = ll
 
-        # M-Step
-
-        N_K = np.sum(r, axis=0, dtype=np.float)
-        new_mu = np.dot(r.T, attr)
-        for t in range(no_of_cluster):
-            new_mu[t] = new_mu[t] / N_K[t]
-
-        mu = new_mu
-
-        new_cov = np.zeros(shape=(no_of_cluster, dim, dim), dtype='float')
-        for k in range(no_of_cluster):
-            v = np.zeros(shape=(dim, dim), dtype='float')
-            for j in range(len(attr)):
-                diff = np.reshape((attr[j] - mu[k]), (-1, 1))
-                v += r[j][k] * np.dot(diff, diff.T)
-            new_cov[k] = v / N_K[k]
-
-            pi[k] = N_K[k] / n_data
-        cov = new_cov
-
+    print("******** Mu ********")
+    print(mu)
+    print("******** Cov ********")
+    print(cov)
+    print("******** pi ********")
+    print(pi)
+    print("****************")
     return r, mu, cov, pi
 
 
@@ -192,20 +118,70 @@ def coef(gmm_truth):
     print("Jaccard: ", jaccard)
 
 
-# filename = 'cho.txt'
-filename = 'iyer.txt'
-data = readfile(filename)
+def read_input():
+    global data
+    global niter
+    global attr
+    global dim
+    global n_data
+    global clusters
+    global no_of_cluster
+    global pi
+    global mu
+    global cov
+    global smoothing_value
+    global conv_threshold
 
-init_param(data)
-# r, mu, cov, pi = EM(mu, cov, pi)
-r, mu, cov, pi = EM1(mu, cov, pi)
+    # mu = numpy.array(json.loads(input("Enter mean: ")))
+    # cov = numpy.array(json.loads(input("Enter cov: ")))
+    # pi = numpy.array(json.loads(input("Enter pi: ")))
+    # no_of_cluster = int(input("Enter no. of cluster: "))
+    # niter = int(input("Enter max iteration: "))
+    # conv_threshold = float(input("Enter convergence threshold: "))
+    # smoothing_value = float(input("Enter smoothing value: "))
+
+    # smoothing_value = 0
+    # initialize parameters
+
+    attr = data[:, 2:]
+    smoothing_value = 0.000000001
+    conv_threshold = 0.000000001
+    niter = 100
+    clusters = set(np.array(data[:, 1], dtype='int'))
+    no_of_cluster = len(clusters) if -1 not in clusters else len(clusters) - 1
+
+    dim = np.shape(data)[1] - 2
+    n_data = np.shape(data)[0]
+
+
+    np.random.seed(4000)
+
+    rand_data = np.random.choice(n_data, no_of_cluster, replace=False)
+    mu = attr[rand_data]
+    # mu = np.array([[0, 0], [0, 4], [4, 4]])
+
+    pi = np.ones(no_of_cluster, dtype='float64') / no_of_cluster
+    # pi = np.array([0.1, 0.1, 0.1, 0.1, 0.1,0.1, 0.1, 0.1, 0.1, 0.1])
+
+    cov = np.zeros((no_of_cluster, dim, dim), dtype='float64')
+    for i in range(no_of_cluster):
+        np.fill_diagonal(cov[i], 1)
+
+
+# filename = 'cho.txt'
+# filename = 'iyer.txt'
+filename = 'GMM_tab_seperated.txt'
+
+data = readfile(filename)
+read_input()
+
+r, mu, cov, pi = EM(mu, cov, pi)
 
 lab = np.argmax(r, axis=1), (-1, 1)
-
-data_pca = pca(data[:, 2:])
-
-orig_label = data[:, 1]
-
 coef(lab[0])
-# plot_pca(data_pca, lab[0], filename)
-# plot_pca(data_pca, orig_label, filename)
+
+if dim <= 2:
+    plot_pca(attr, lab[0], filename)
+else:
+    data_pca = pca(data[:, 2:])
+    plot_pca(data_pca, lab[0], filename)
