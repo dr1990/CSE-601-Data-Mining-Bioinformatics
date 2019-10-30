@@ -2,11 +2,11 @@ from pprint import pprint
 from index import get_cluster_group, get_incidence_matrix, get_categories
 from numpy.linalg import eigh
 from kmeans import choose_initial_centroids_by_ids, plot_pca
-from pca import pca
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
 
 
 def readfile(filename):
@@ -39,18 +39,8 @@ def fully_connected_graph(attr, sigma):
     wt = np.zeros((n_data, n_data))
     for i in range(n_data):
         for j in range(i, n_data):
-            # if i == j:
-            #     wt[i][j] = 0
-            # else:
                 wt[i][j] = np.exp(-1 * np.sum(((attr[i] - attr[j]) ** 2)) / (sigma ** 2))
                 wt[j][i] = wt[i][j]
-
-    # for i in range(n_data):
-    #     max[i] = wt[i].argsort()[-k:][::-1]
-    #     for j in range(n_data):
-    #         if j not in max[i]:
-    #             wt[i][j] = 0.0
-
     sym = is_sym(wt)
     return wt
 
@@ -69,12 +59,12 @@ def get_adjacency_matrix(attr, sigma):
     w = fully_connected_graph(attr, sigma)
     return w
 
-def getNbyKMatrix(eigen_map, eig_val):
+def getNbyKMatrix(eig_vec, eig_val):
     k = max_eigen_gap_num(eig_val)
-    eig_val = np.sort(eig_val)
-    reduced_data = np.empty((n_data, k))
-    for i in range(k):
-        reduced_data[:,i] = eigen_map[eig_val[i]]
+    print(k)
+    eig_val = eig_val[np.argsort(eig_val)]
+    eig_vec = eig_vec[:,np.argsort(eig_val)]
+    reduced_data = eig_vec[:,1:k]
     return reduced_data
 
 def max_eigen_gap_num(eigen_val):
@@ -89,9 +79,9 @@ def max_eigen_gap_num(eigen_val):
 
 filename = 'new_dataset_1.txt'
 # filename = '../cho.txt'
-sigma = 2
+sigma = 2.75
 num_clusters = 3
-choice = "random"
+choice = "hard"
 centers = [10, 25, 44]
 max_iters = 100
 
@@ -109,13 +99,7 @@ sym = is_sym(L)
 
 eig_val, eig_vec = eigh(L)
 
-
-eigen_map = dict()
-
-for i in range (len(eig_val)):
-    eigen_map[eig_val[i]] = eig_vec[:,i]
-
-reduced_data = getNbyKMatrix(eigen_map, eig_val)
+reduced_data = getNbyKMatrix(eig_vec, eig_val)
 if choice == "hard":
     init = choose_initial_centroids_by_ids(centers, reduced_data)
 else:
@@ -135,9 +119,9 @@ jaccard = categories[1][1] / (categories[1][0] + categories[0][1] + categories[1
 
 print("Rand Coeff for K-means algorithm: ", rand)
 print("Jaccard Coeff for K-means algorithm: ", jaccard)
-data_pca = pca(attr)
+data_pca = PCA(n_components=2).fit_transform(attr)
 plot_pca(data_pca, clusters, filename)
 plot_pca(data_pca, global_truth, filename)
 
-# print(clusters)
-# print(CENTROIDS)
+# # print(clusters)
+# # print(CENTROIDS)

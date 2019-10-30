@@ -1,6 +1,6 @@
 from index import get_cluster_group, get_incidence_matrix, get_categories
 from kmeans import *
-from pca import pca
+from sklearn.decomposition import PCA
 import pandas as pd
 import numpy as np
 
@@ -50,7 +50,7 @@ jaccard = categories[1][1] / (categories[1][0] + categories[0][1] + categories[1
 print("Rand Coeff for K-means algorithm: ", rand)
 print("Jaccard Coeff for K-means algorithm: ", jaccard)
 
-data_pca = pca(data)
+data_pca = PCA(n_components=2).fit_transform(data)
 plot_pca(data_pca, clusters, filename)
 plot_pca(data_pca, global_truth, filename)
  

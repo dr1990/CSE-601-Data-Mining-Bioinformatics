@@ -1,6 +1,12 @@
 Steps to execute the clustering algoirhtms -
 
 1. KMeans
+	a) Open Kmeans2.py, Lines 17 to 22 specify the parametres to be given
+	b) "choice" : is 'random' for kmeans with random initial centres, "hard" to run with given centres
+	c) NUM_CLUSTERS: Number of clusters
+	d) NUM_iters : number of iterations for a kmeans run
+	e) centre_ids : when choice is  "hard" put initial row ids for centres here 
+	f) Open terminal in the directory with this file, and run command 'python kmeans2.py'
 
 2. HAC using Min approach
 Open terminal and execute the following command:
@@ -33,3 +39,9 @@ Please change the filename in the code in order to manually type parameters.
 By default cho.txt is default filename. Please change it to run on different dataset.
 
 5. Spectral
+	a) Open file spectral.py, Lines 82-86 specify the parameters as input
+	b)sigma : sigma value for Gaussian kernel
+	c)num_clusters : number of clusters
+	d) choice : same as the kmeans description, to run Kmeans step of algorithm with random centres or hardcoded ones
+	e)max_iters : number of iterations for the kmeans step
+	f) Open terminal in the directory with this file, and run command 'python spectral.py'
