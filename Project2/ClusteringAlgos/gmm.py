@@ -25,7 +25,10 @@ def plot_pca(pca, label, file):
         i += 1
 
     # Color code different disease to unique number
-    color = [plt.cm.jet(float(val) / max(label_map.values())) for val in label_map.values()]
+    demon = max(label_map.values())
+    if demon == 0:
+        demon = smoothing_value
+    color = [plt.cm.jet(float(val) / demon) for val in label_map.values()]
 
     for key, value in label_map.items():
         x = [float(k) for (t, k) in enumerate(pca[:, 0]) if label[t] == key]
@@ -106,9 +109,11 @@ def coef(gmm_truth):
     cluster_group = get_cluster_group(id, ground_truth)
     cluster_group = collections.OrderedDict(sorted(cluster_group.items()))
     incidence_matrix_gt = get_incidence_matrix(ground_truth, cluster_group)
+
     cluster_group_gmm = get_cluster_group(id, gmm_truth)
     cluster_group_gmm = collections.OrderedDict(sorted(cluster_group_gmm.items()))
     incidence_matrix_gmm = get_incidence_matrix(gmm_truth, cluster_group_gmm)
+
     categories = get_categories(incidence_matrix_gt, incidence_matrix_gmm)
 
     rand = (categories[0][0] + categories[1][1]) / np.sum(categories)
@@ -131,6 +136,7 @@ def read_input():
     global cov
     global smoothing_value
     global conv_threshold
+    global max_iter
 
     # mu = numpy.array(json.loads(input("Enter mean: ")))
     # cov = numpy.array(json.loads(input("Enter cov: ")))
@@ -143,6 +149,13 @@ def read_input():
     # smoothing_value = 0
     # initialize parameters
 
+    # # mu = np.array([[0, 0], [0, 4], [4, 4]])
+    # mu = np.array([[0, 0], [1, 1]])
+    # # cov = np.array([[[1, 1], [1, 1]], [[2, 2], [2, 2]], [[3, 3], [3, 3]]])
+    # cov = np.array([[[1, 1], [1, 1]], [[2, 2], [2, 2]]])
+    # pi = np.array([0.1, 0.1, 0.1, 0.1, 0.1,0.1, 0.1, 0.1, 0.1, 0.1])
+
+    max_iter = 1000
     attr = data[:, 2:]
     smoothing_value = 0.000000001
     conv_threshold = 0.000000001
@@ -153,18 +166,16 @@ def read_input():
     dim = np.shape(data)[1] - 2
     n_data = np.shape(data)[0]
 
-
     np.random.seed(4000)
 
     rand_data = np.random.choice(n_data, no_of_cluster, replace=False)
     mu = attr[rand_data]
-    # mu = np.array([[0, 0], [0, 4], [4, 4]])
 
     pi = np.ones(no_of_cluster, dtype='float64') / no_of_cluster
-    # pi = np.array([0.1, 0.1, 0.1, 0.1, 0.1,0.1, 0.1, 0.1, 0.1, 0.1])
 
     cov = np.zeros((no_of_cluster, dim, dim), dtype='float64')
     for i in range(no_of_cluster):
+        # cov[i] = i + 1
         np.fill_diagonal(cov[i], 1)
 
 
