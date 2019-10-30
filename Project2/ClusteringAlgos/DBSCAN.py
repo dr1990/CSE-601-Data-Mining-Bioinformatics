@@ -9,9 +9,9 @@ from ClusteringAlgos.index import get_cluster_group, get_incidence_matrix, get_c
 
 from ClusteringAlgos import pca
 
-fileName = 'iyer.txt'
+# fileName = 'iyer.txt'
 # fileName = 'cho.txt'
-# fileName = 'dbscan_tab_seperated.txt'
+fileName = 'dbscan_tab_seperated.txt'
 data = pd.read_csv("../" + fileName, sep="\t", index_col=0, header=None)
 
 data_ground_truth = data[1]  # ground truth values
