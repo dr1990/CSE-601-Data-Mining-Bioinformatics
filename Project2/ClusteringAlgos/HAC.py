@@ -5,12 +5,12 @@ from collections import OrderedDict
 from pprint import pprint
 import seaborn as sb
 from matplotlib import pyplot
-from ClusteringAlgos import pca
-from ClusteringAlgos.index import get_cluster_group, get_incidence_matrix, get_categories
+from index import get_cluster_group, get_incidence_matrix, get_categories
+from sklearn.decomposition import PCA
 
 # fileName = 'iyer.txt'
-# fileName= 'cho.txt'
-fileName = 'new_dataset_2.txt'
+fileName= 'cho.txt'
+# fileName = 'new_dataset_2.txt'
 data = pd.read_csv("../" + fileName, sep="\t", index_col=0, header=None)
 
 # data = data[~(data[1] == -1)]  # removing outliers (-1 rows)
@@ -89,15 +89,18 @@ for k,v in clusterMap.items():
 
 validate(clusterIds)
 
-pca_data = pca.pca(data)
-pca_data_df = pd.DataFrame(pca_data, columns=['x','y'], index=geneIds)
-pca_data_df['labels_GT'] = data_ground_truth
-pca_data_df['labels_HAC'] = clusterIds
+pca=PCA(n_components=2)
+pca.fit(data)
 
-plot1 = sb.scatterplot(data= pca_data_df, x='x', y='y', hue='labels_GT', legend='full', palette='rainbow', marker='x')
+plot_data = pca.transform(data)
+plot_data_df = pd.DataFrame(plot_data, columns=['x','y'], index=geneIds)
+plot_data_df['labels_GT'] = data_ground_truth
+plot_data_df['labels_HAC'] = clusterIds
+
+plot1 = sb.scatterplot(data= plot_data_df, x='x', y='y', hue='labels_GT', legend='full', palette='rainbow', marker='x')
 plot1.set_title(fileName + ' Ground Truth')
 pyplot.show()
 
-plot2 = sb.scatterplot(data= pca_data_df, x = 'x', y= 'y', hue='labels_HAC', legend='full', palette='rainbow', marker='x')
+plot2 = sb.scatterplot(data= plot_data_df, x = 'x', y= 'y', hue='labels_HAC', legend='full', palette='rainbow', marker='x')
 plot2.set_title('Clusters formed using HAC on ' + fileName)
 pyplot.show()

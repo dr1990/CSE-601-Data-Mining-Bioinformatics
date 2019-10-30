@@ -5,9 +5,8 @@ from collections import deque, OrderedDict
 from pprint import pprint
 import seaborn as sb
 from matplotlib import pyplot
-from ClusteringAlgos.index import get_cluster_group, get_incidence_matrix, get_categories
-
-from ClusteringAlgos import pca
+from index import get_cluster_group, get_incidence_matrix, get_categories
+from sklearn.decomposition import PCA
 
 # fileName = 'iyer.txt'
 # fileName = 'cho.txt'
@@ -105,6 +104,7 @@ eps = float(input('Enter eps value - '))
 minPts = int(input('Enter minPts value - '))
 # DBSCAN(1.3, 16)       # for cho.txt
 # DBSCAN(1, 4)          # for iyer.txt
+# DBSCAN(0.2, 10)       # for demo dataset
 DBSCAN(eps, minPts)
 pprint(clusterMap)
 
@@ -113,7 +113,10 @@ validate(list(clusterMap.values()))
 
 # Plotting data (ground truth & realized clusters)
 if performPCA:
-    plot_data = pca.pca(data[1:, :])
+    # plot_data = pca.pca(data[1:, :])
+    pca = PCA(n_components=2)
+    pca.fit(data[1:, :])
+    plot_data = pca.transform(data[1:,:])
 else:
     plot_data = data[1:, :]
 plot_data_df = pd.DataFrame(plot_data, columns=['x','y'], index=geneIds)
