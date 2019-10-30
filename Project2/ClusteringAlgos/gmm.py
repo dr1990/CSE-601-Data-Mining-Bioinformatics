@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 
 def plot_pca(pca, label, file):
     distinct_lable = set([])
-    # label = label.tolist()
     for x in label:
         distinct_lable.add(x)
 
@@ -80,18 +79,6 @@ def EM(mu, cov, pi):
             diff = (attr - mu[k])
             sm = np.dot(r[:, k] * diff.T, diff)
             cov[k] = sm / (N_K[k] + smoothing_value)
-
-        # ll = 0
-        # for k in range(no_of_cluster):
-        #     ll += np.log(np.sum(pi[k] * (multivariate_normal(mu[k], cov[k], allow_singular=True).pdf(attr))))
-
-        # ll = np.sum(np.sum(r))
-
-        # if (ll - prev_ll) < conv_threshold:
-        #     break
-
-        # print(_, ll, prev_ll, (ll - prev_ll))
-        # prev_ll = ll
 
     print("******** Mu ********")
     print(mu)
@@ -183,8 +170,8 @@ def read_input():
             np.fill_diagonal(cov[i], 1)
 
 
-# filename = 'cho.txt'
-filename = 'iyer.txt'
+filename = 'cho.txt'
+# filename = 'iyer.txt'
 # filename = 'GMM_tab_seperated.txt'
 
 data = readfile(filename)
