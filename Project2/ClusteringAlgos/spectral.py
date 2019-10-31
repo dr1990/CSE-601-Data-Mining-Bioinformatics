@@ -48,14 +48,6 @@ def get_diag(W):
         d[i][i] = np.sum(W[i])
     return d
 
-
-def get_adjacency_matrix(attr, sigma):
-    w = np.zeros((n_data, n_data))
-    k = 10
-    w = fully_connected_graph(attr, sigma)
-    return w
-
-
 def getNbyKMatrix(eig_vec, eig_val):
     k = max_eigen_gap_num(eig_val)
     print(k)
@@ -87,7 +79,7 @@ max_iters = 100
 data = readfile(filename)
 init_param(data, num_clusters)
 
-W = get_adjacency_matrix(attr, sigma)
+W = fully_connected_graph(attr, sigma)
 
 D = get_diag(W)
 
