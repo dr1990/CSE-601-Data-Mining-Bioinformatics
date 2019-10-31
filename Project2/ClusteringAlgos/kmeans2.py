@@ -4,35 +4,33 @@ from sklearn.decomposition import PCA
 import pandas as pd
 import numpy as np
 
-
-
-#Read data, process and extract truth value
+# Read data, process and extract truth value
 filename = "new_dataset_1.txt"
+# filename = "cho.txt"
 data = readfile(filename)
 ids, data, global_truth = process_input(data)
 ids = ids.astype(int)
 global_truth = global_truth.astype(int)
 
-#------------parameters----------------------------------------------------------------------------
-choice = "random"
-unique_clusters = set(global_truth) #unique number of clusters
+# ------------parameters----------------------------------------------------------------------------
+choice = "hard"
+unique_clusters = set(global_truth)  # unique number of clusters
 # NUM_CLUSTERS = len(unique_clusters) if -1 not in unique_clusters else len(unique_clusters) - 1
 NUM_CLUSTERS = 3
 NUM_iters = 10
-centre_ids = [3, 5, 7]
-#-----------------run kmeans for a specific number of times with randomly initialized centres ------------------------
-if (choice == "random"):
-	res = np.zeros((NUM_CLUSTERS, data.shape[1]))
-	for i in range(20):
-		CENTROIDS = choose_initial_centroids(data, NUM_CLUSTERS)
-		clusters, res_centres = process_kmeans(data, CENTROIDS, NUM_CLUSTERS, NUM_iters)
-		res = np.add(res, res_centres)
-	#reassign centroids with average of all the runs
-	CENTROIDS = res/20
-#--------------------------------------------------------------------------------------------------------
-elif (choice == "hard"):
-	CENTROIDS = choose_initial_centroids_by_ids(centre_ids, data)
-
+centre_ids = [30, 15, 17]
+# -----------------run kmeans for a specific number of times with randomly initialized centres ------------------------
+if choice == "random":
+    res = np.zeros((NUM_CLUSTERS, data.shape[1]))
+    for i in range(20):
+        CENTROIDS = choose_initial_centroids(data, NUM_CLUSTERS)
+        clusters, res_centres = process_kmeans(data, CENTROIDS, NUM_CLUSTERS, NUM_iters)
+        res = np.add(res, res_centres)
+    # reassign centroids with average of all the runs
+    CENTROIDS = res / 20
+# --------------------------------------------------------------------------------------------------------
+elif choice == "hard":
+    CENTROIDS = choose_initial_centroids_by_ids(centre_ids, data)
 
 # run kmeans final time
 clusters, res_centres = process_kmeans(data, CENTROIDS, NUM_CLUSTERS, NUM_iters)
@@ -52,6 +50,4 @@ print("Jaccard Coeff for K-means algorithm: ", jaccard)
 
 data_pca = PCA(n_components=2).fit_transform(data)
 plot_pca(data_pca, clusters, filename)
-plot_pca(data_pca, global_truth, filename)
- 
 

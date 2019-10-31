@@ -36,6 +36,7 @@ data = np.vstack((np.zeros((1, data.shape[1])), data))
 
 visited = set()
 
+
 # DBSCAN algorithm
 # Input:
 #  eps - Epsilon distance
@@ -70,6 +71,7 @@ def expandCluster(P, neighbourPoints, C, eps, minPts):
         if clusterMap[nPoint] == -1:
             clusterMap[nPoint] = C
 
+
 # Method to find all the points within 'eps' distance of datapoint 'P'
 # P - datapoint under consideration
 # - Epsilon distance
@@ -83,6 +85,7 @@ def regionQuery(P, eps):
             neighbourPoints.append(i)
 
     return neighbourPoints
+
 
 # Validation of assigned cluster using RAND and Jaccard coefficients
 def validate(DBSCAN_clusters):
@@ -100,29 +103,30 @@ def validate(DBSCAN_clusters):
     print("RAND: ", rand)
     print("Jaccard: ", jaccard)
 
+
 eps = float(input('Enter eps value - '))
 minPts = int(input('Enter minPts value - '))
 # DBSCAN(1.3, 16)       # for cho.txt
 # DBSCAN(1, 4)          # for iyer.txt
 # DBSCAN(0.2, 10)       # for demo dataset
 DBSCAN(eps, minPts)
-pprint(clusterMap)
+# pprint(clusterMap)
 
 validate(list(clusterMap.values()))
-
 
 # Plotting data (ground truth & realized clusters)
 if performPCA:
     # plot_data = pca.pca(data[1:, :])
     pca = PCA(n_components=2)
     pca.fit(data[1:, :])
-    plot_data = pca.transform(data[1:,:])
+    plot_data = pca.transform(data[1:, :])
 else:
     plot_data = data[1:, :]
-plot_data_df = pd.DataFrame(plot_data, columns=['x','y'], index=geneIds)
+plot_data_df = pd.DataFrame(plot_data, columns=['x', 'y'], index=geneIds)
 plot_data_df['labels_GT'] = data_ground_truth
 plot_data_df['labels_DBSCAN'] = list(clusterMap.values())
 
-plot2 = sb.scatterplot(data= plot_data_df, x = 'x', y= 'y', hue='labels_DBSCAN', legend='full', palette='rainbow_r', marker='x')
+plot2 = sb.scatterplot(data=plot_data_df, x='x', y='y', hue='labels_DBSCAN', legend='full', palette='rainbow_r',
+                       marker='x')
 plot2.set_title('Clusters formed using DBSCAN on ' + fileName)
 pyplot.show()

@@ -8,84 +8,96 @@ import math
 import matplotlib.pyplot as plt
 import random
 
+
 def readfile(filename):
     data = pd.read_csv(filename, header=None, sep="\t")
     data = np.array(data.values)
     return data
 
+
 def process_input(data):
-	#remove outliers
-	data = data[np.where(~(data[:,1] == -1))]
-	ids = data[:,0]
-	global_truth = data[:,1]
-	data = np.delete(data, 1, 1)
-	data = np.delete(data, 0, 1)
-	return ids, data, global_truth
+    # remove outliers
+    data = data[np.where(~(data[:, 1] == -1))]
+    ids = data[:, 0]
+    global_truth = data[:, 1]
+    data = np.delete(data, 1, 1)
+    data = np.delete(data, 0, 1)
+    return ids, data, global_truth
+
 
 def choose_initial_centroids(data, num_clusters):
-	#random initialization for centres
-	samples = random.sample(range(0, data.shape[0]), num_clusters)
-	return data[samples,:]
-	# print(CENTROIDS.shape)
+    # random initialization for centres
+    samples = random.sample(range(0, data.shape[0]), num_clusters)
+    return data[samples, :]
+
+
+# print(CENTROIDS.shape)
 def choose_initial_centroids_by_ids(centre_ids, data):
-	return data[centre_ids,:]
-	
+    return data[centre_ids, :]
+
+
 def distance(point1, point2):
-	#Similarity measure between two data points i.e. euclidean distance
-	return math.sqrt(np.sum(np.square(point1 - point2)))
+    # Similarity measure between two data points i.e. euclidean distance
+    return math.sqrt(np.sum(np.square(point1 - point2)))
+
 
 def recalculate_centroid(cluster_members, size):
-	res = np.zeros(size)
-	for member in cluster_members:
-		# print(np.array(member))
-		res = np.add(res, np.array(member))
-	res = res/len(cluster_members)
-	return res 
+    res = np.zeros(size)
+    for member in cluster_members:
+        # print(np.array(member))
+        res = np.add(res, np.array(member))
+    res = res / len(cluster_members)
+    return res
+
+
 def get_point_with_max_sse(data, centre):
-	maxp = -99999999
-	maxssse_point = None
-	for point in data:
-		dist = distance(point, centre)
-		if(dist > maxp):
-			maxp = dist
-			maxssse_point = point
-	return maxssse_point
+    maxp = -99999999
+    maxssse_point = None
+    for point in data:
+        dist = distance(point, centre)
+        if (dist > maxp):
+            maxp = dist
+            maxssse_point = point
+    return maxssse_point
+
+
 def process_kmeans(data, centroids, num_clusters, n_iters):
-	#clusters is an array such that clusters[i] = j means that ith data object belongs to j
-	clusters = [0] * data.shape[0]
-	#check for change in cluster membership
-	previous_clusters = None
-	max_iters,iters = n_iters, 0
-	while(previous_clusters != clusters or iters == max_iters):
-		iters += 1
-		previous_clusters = clusters
-		#for each datapoint
-		for j, gene in enumerate(data):	
-			min_dist = float("inf")
-			#calculate its distance with each centroid and find the closest point
-			for i,centroid in enumerate(centroids):
-				dist = distance(data[j], centroid)
-				if(dist < min_dist):
-					min_dist = dist
-					clusters[j] = i + 1
-		temp_centroids = np.empty((num_clusters, data.shape[1]), dtype=np.float64)		
-		for i, centre in enumerate(centroids):
-			#associate each datapoint with a cluster
-			cluster_members = []
-			for j, cluster_value in enumerate(clusters):
-				if(cluster_value == i+1):
-					cluster_members.append(data[j])
-			#check for empty clusters
-			if(len(cluster_members) > 0):
-				#calculate centroid for new cluster
-				temp_centroids[i] = recalculate_centroid(cluster_members, data.shape[1])
-			else:
-				#todo for now random centroid
-				temp_centroids[i] = get_point_with_max_sse(data, centre)
-		centroids = temp_centroids
-	# print(previous_clusters)
-	# print(clusters)
-	return clusters, centroids
+    # clusters is an array such that clusters[i] = j means that ith data object belongs to j
+    clusters = [0] * data.shape[0]
+    # check for change in cluster membership
+    previous_clusters = None
+    max_iters, iters = n_iters, 0
+    while (previous_clusters != clusters or iters == max_iters):
+        iters += 1
+        previous_clusters = clusters
+        # for each datapoint
+        for j, gene in enumerate(data):
+            min_dist = float("inf")
+            # calculate its distance with each centroid and find the closest point
+            for i, centroid in enumerate(centroids):
+                dist = distance(data[j], centroid)
+                if (dist < min_dist):
+                    min_dist = dist
+                    clusters[j] = i + 1
+        temp_centroids = np.empty((num_clusters, data.shape[1]), dtype=np.float64)
+        for i, centre in enumerate(centroids):
+            # associate each datapoint with a cluster
+            cluster_members = []
+            for j, cluster_value in enumerate(clusters):
+                if (cluster_value == i + 1):
+                    cluster_members.append(data[j])
+            # check for empty clusters
+            if (len(cluster_members) > 0):
+                # calculate centroid for new cluster
+                temp_centroids[i] = recalculate_centroid(cluster_members, data.shape[1])
+            else:
+                # todo for now random centroid
+                temp_centroids[i] = get_point_with_max_sse(data, centre)
+        centroids = temp_centroids
+    # print(previous_clusters)
+    # print(clusters)
+    return clusters, centroids
+
 
 def plot_pca(pca, label, file):
     distinct_lable = set([])
@@ -108,6 +120,6 @@ def plot_pca(pca, label, file):
         y = [float(k) for (t, k) in enumerate(pca[:, 1]) if label[t] == key]
         plt.scatter(x, y, c=color[value], label=str(key))
 
-    plt.title("Scatter Plot for " + file + ". Algorithm: PCA")
+    plt.title("Scatter Plot for " + file)
     plt.legend()
     plt.show()

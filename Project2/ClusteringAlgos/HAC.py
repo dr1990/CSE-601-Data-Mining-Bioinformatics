@@ -9,8 +9,8 @@ from index import get_cluster_group, get_incidence_matrix, get_categories
 from sklearn.decomposition import PCA
 
 # fileName = 'iyer.txt'
-fileName= 'cho.txt'
-# fileName = 'new_dataset_2.txt'
+# fileName = 'cho.txt'
+fileName = 'new_dataset_2.txt'
 data = pd.read_csv(fileName, sep="\t", index_col=0, header=None)
 
 # data = data[~(data[1] == -1)]  # removing outliers (-1 rows)
@@ -38,7 +38,7 @@ dist = cdist(data, data, metric='euclidean')
 
 # Setting all diagonal points to infinity (which are originally 0).
 # Done to find min value in the matrix easily.
-dist[dist[:,:] == 0] = np.inf
+dist[dist[:, :] == 0] = np.inf
 
 rowCount = dist.shape[0]
 
@@ -58,6 +58,7 @@ while (rowCount != cluster_count):
     del clusters[geneId_map.get(y)]
     rowCount -= 1
 
+
 # Validation of assigned cluster using RAND and Jaccard coefficients
 def validate(HAC_clusters):
     cluster_group = get_cluster_group(geneIds, list(data_ground_truth))
@@ -74,29 +75,30 @@ def validate(HAC_clusters):
     print("RAND: ", rand)
     print("Jaccard: ", jaccard)
 
+
 pprint(clusters)
 
 clusterMap = dict()
 # Assigning cluster numbers to each data point starting from 1
 # clusterMap = {geneId, clusterNumber}
-for x,i in enumerate(clusters.values(), 1):
+for x, i in enumerate(clusters.values(), 1):
     for j in i:
         clusterMap[j] = x
 
 clusterIds = [0] * len(clusterMap)
-for k,v in clusterMap.items():
+for k, v in clusterMap.items():
     clusterIds[k - 1] = v
 
 validate(clusterIds)
 
-pca=PCA(n_components=2)
+pca = PCA(n_components=2)
 pca.fit(data)
 
 plot_data = pca.transform(data)
-plot_data_df = pd.DataFrame(plot_data, columns=['x','y'], index=geneIds)
+plot_data_df = pd.DataFrame(plot_data, columns=['x', 'y'], index=geneIds)
 plot_data_df['labels_GT'] = data_ground_truth
 plot_data_df['labels_HAC'] = clusterIds
 
-plot2 = sb.scatterplot(data= plot_data_df, x = 'x', y= 'y', hue='labels_HAC', legend='full', palette='rainbow', marker='x')
+plot2 = sb.scatterplot(data=plot_data_df, x='x', y='y', hue='labels_HAC', legend='full', palette='rainbow', marker='x')
 plot2.set_title('Clusters formed using HAC on ' + fileName)
 pyplot.show()

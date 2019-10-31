@@ -24,10 +24,10 @@ def plot_pca(pca, label, file):
         i += 1
 
     # Color code different disease to unique number
-    demon = max(label_map.values())
-    if demon == 0:
-        demon = smoothing_value
-    color = [plt.cm.jet(float(val) / demon) for val in label_map.values()]
+    # demon = max(label_map.values())
+    # if demon == 0:
+    #     demon = smoothing_value
+    color = [plt.cm.jet(float(val) / max(label_map.values())) for val in label_map.values()]
 
     for key, value in label_map.items():
         x = [float(k) for (t, k) in enumerate(pca[:, 0]) if label[t] == key]
@@ -51,20 +51,18 @@ def EM(mu, cov, pi):
     prev_ll = -9999999999
 
     for _ in range(niter):
-
         # E-Step
         pdf = np.zeros((n_data, no_of_cluster))
         for k in range(no_of_cluster):
             t = multivariate_normal(mu[k], cov[k], allow_singular=True).pdf(attr)
-            t = pi[k] * np.reshape(t, (-1, 1))
-            pdf[:, k] = t.T
+            pdf[:, k] = t * pi[k]
 
         sm = 0
         for k in range(no_of_cluster):
-            sm += pdf[:, k] * pi[k]
+            sm += pdf[:, k]
 
         for k in range(no_of_cluster):
-            r[:, k] = (pdf[:, k] * pi[k]) / (sm + smoothing_value)
+            r[:, k] = pdf[:, k] / (sm + smoothing_value)
 
         pi = np.sum(r, axis=0) / attr.shape[0]
 
@@ -133,6 +131,7 @@ def read_input():
     np.random.seed(4000)
 
     if cli == 'Y':
+        # Input parameters
         mu = numpy.array(json.loads(input("Enter mean: ")))
         cov = numpy.array(json.loads(input("Enter cov: ")))
         pi = numpy.array(json.loads(input("Enter pi: ")))
@@ -140,15 +139,22 @@ def read_input():
         max_iter = int(input("Enter max iteration: "))
         conv_threshold = float(input("Enter convergence threshold: "))
         smoothing_value = float(input("Enter smoothing value: "))
-        niter = 1
+        niter = 100
+
         # smoothing_value = 0
         # initialize parameters
 
-        # # mu = np.array([[0, 0], [0, 4], [4, 4]])
+        # mu = np.array([[0, 0], [0, 4], [4, 4]])
         # mu = np.array([[0, 0], [1, 1]])
-        # # cov = np.array([[[1, 1], [1, 1]], [[2, 2], [2, 2]], [[3, 3], [3, 3]]])
+        # cov = np.array([[[1, 2], [2, 1]], [[1, 2], [2, 1]], [[1, 3], [3, 1]]], dtype=np.float64)
         # cov = np.array([[[1, 1], [1, 1]], [[2, 2], [2, 2]]])
         # pi = np.array([0.3333, 0.3333, 0.3333])
+        # pi = np.array([0.5, 0.5])
+
+        cov = np.zeros((no_of_cluster, dim, dim), dtype='float64')
+        for i in range(no_of_cluster):
+            # cov[i] = i + 1
+            np.fill_diagonal(cov[i], 1)
 
     else:
         max_iter = 1000
@@ -170,9 +176,9 @@ def read_input():
             np.fill_diagonal(cov[i], 1)
 
 
-filename = 'cho.txt'
+# filename = 'cho.txt'
 # filename = 'iyer.txt'
-# filename = 'GMM_tab_seperated.txt'
+filename = 'GMM_tab_seperated.txt'
 
 data = readfile(filename)
 read_input()

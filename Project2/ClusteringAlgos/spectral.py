@@ -69,10 +69,11 @@ def max_eigen_gap_num(eigen_val):
 
 
 filename = 'new_dataset_1.txt'
-# filename = '../cho.txt'
+# filename = 'cho.txt'
+
 sigma = 2.75
 num_clusters = 3
-choice = "hard"
+choice = "random"
 centers = [10, 25, 44]
 max_iters = 100
 
