@@ -11,7 +11,7 @@ from sklearn.decomposition import PCA
 # fileName = 'iyer.txt'
 # fileName = 'cho.txt'
 fileName = 'dbscan_tab_seperated.txt'
-data = pd.read_csv("../" + fileName, sep="\t", index_col=0, header=None)
+data = pd.read_csv(fileName, sep="\t", index_col=0, header=None)
 
 data_ground_truth = data[1]  # ground truth values
 del data[1]  # deleting the truth values column
@@ -122,10 +122,6 @@ else:
 plot_data_df = pd.DataFrame(plot_data, columns=['x','y'], index=geneIds)
 plot_data_df['labels_GT'] = data_ground_truth
 plot_data_df['labels_DBSCAN'] = list(clusterMap.values())
-
-plot1 = sb.scatterplot(data= plot_data_df, x='x', y='y', hue='labels_GT', legend='full', palette='rainbow_r', marker='x')
-plot1.set_title(fileName + ' Ground Truth')
-pyplot.show()
 
 plot2 = sb.scatterplot(data= plot_data_df, x = 'x', y= 'y', hue='labels_DBSCAN', legend='full', palette='rainbow_r', marker='x')
 plot2.set_title('Clusters formed using DBSCAN on ' + fileName)
