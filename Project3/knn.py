@@ -40,7 +40,6 @@ def get_confusion_matrix(train_label, pred):
 def knn(k, train_data, test_data, train_label, test_label):
     shape = np.shape(test_data)
     row = shape[0]
-    col = shape[1]
 
     knn_matrix = np.zeros((row, k))
     pred = np.zeros((row, 1))
@@ -52,13 +51,9 @@ def knn(k, train_data, test_data, train_label, test_label):
         dist = dm.flatten()
         knn_matrix[i] = dist.argsort()[:k]
 
-        # for i in range(row):
         wt = [0, 0]
         for j in range(k):
             ind = int(knn_matrix[i][j])
-            # v = dist[ind]
-            # if v != 0:
-            # wt[int(train_label[ind])] += 1 / v
             wt[int(train_label[ind])] += 1
 
         wt = np.asarray(wt)
@@ -83,36 +78,42 @@ def get_train_data(split_data, ind):
     return np.vstack([x for i, x in enumerate(split_data) if i != ind])
 
 
-file = 'project3_dataset1.txt'
-data = readfile(file)
-k = 5
-# n-fold validation
-n = 10
-split_data = np.array_split(data, n)
+def main(file, k, n):
+    data = readfile(file)
 
-accuracy_list = list()
-precision_list = list()
-recall_list = list()
-f1_measure_list = list()
+    accuracy_list = list()
+    precision_list = list()
+    recall_list = list()
+    f1_measure_list = list()
 
-for i in range(n):
-    test = split_data[i]
-    train = get_train_data(split_data, i)
+    # n-fold validation
+    split_data = np.array_split(data, n)
 
-    col = np.shape(test)[1]
+    for i in range(n):
+        test = split_data[i]
+        train = get_train_data(split_data, i)
 
-    test_data = test[:, 0: col - 1]
-    test_label = test[:, col - 1]
-    train_data = train[:, 0: col - 1]
-    train_label = train[:, col - 1]
+        col = np.shape(test)[1]
 
-    accuracy, precision, recall, f1_measure = knn(k, train_data, test_data, train_label, test_label)
-    accuracy_list.append(accuracy)
-    precision_list.append(precision)
-    recall_list.append(recall)
-    f1_measure_list.append(f1_measure)
+        test_data = test[:, 0: col - 1]
+        test_label = test[:, col - 1]
+        train_data = train[:, 0: col - 1]
+        train_label = train[:, col - 1]
 
-print("Accuracy: ", sum(accuracy_list) / n)
-print("Precision: ", sum(precision_list) / n)
-print("Recall: ", sum(recall_list) / n)
-print("F1-Measure: ", sum(f1_measure_list) / n)
+        accuracy, precision, recall, f1_measure = knn(k, train_data, test_data, train_label, test_label)
+        accuracy_list.append(accuracy)
+        precision_list.append(precision)
+        recall_list.append(recall)
+        f1_measure_list.append(f1_measure)
+
+    print("Accuracy: ", sum(accuracy_list) / n)
+    print("Precision: ", sum(precision_list) / n)
+    print("Recall: ", sum(recall_list) / n)
+    print("F1-Measure: ", sum(f1_measure_list) / n)
+
+
+if __name__ == '__main__':
+    file = 'project3_dataset2.txt'
+    k = 5
+    n = 10
+    main(file, k, n)
