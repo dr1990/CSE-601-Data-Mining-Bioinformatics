@@ -60,8 +60,6 @@ class DecisionTree:
 		length = len(data)
 		number_of_columns = data.shape[1] - 1
 		prime_candidate = candidates[0]
-		l1 = 0
-		l2 = 0
 		set1 = data[np.where(data[:, col] <= candidates[0])]
 		l1 = len(set1)
 		set2 = data[np.where(data[col] > candidates[0])]
@@ -81,10 +79,10 @@ class DecisionTree:
 		min_gini_split = (l1/(length))*gini_set1 + (l2/(length))*gini_set2
 		j = 0
 		for i in range(1, len(candidates)):
-			if(data.iloc[j,number_of_columns] == classes[0]):
+			if(data[j,number_of_columns] == classes[0]):
 				lc1_set1 = lc1_set1 + 1
 				lc1_set2 = lc1_set2 - 1
-			elif (data.iloc[j,number_of_columns] == classes[1]):
+			elif (data[j,number_of_columns] == classes[1]):
 				lc2_set1 = lc2_set1 + 1
 				lc2_set2 = lc2_set2 - 1
 			if(lc1_set1+lc2_set1 == 0):
@@ -99,11 +97,14 @@ class DecisionTree:
 			if(gini_split < min_gini_split):
 				min_gini_split = gini_split
 				prime_candidate = candidates[i]
+		print("Min split gin for att",col," is ",min_gini_split, " with prime_candidate",prime_candidate)
 		return min_gini_split, prime_candidate
 
 	def find_best_split(self, data):
-		gain_split = []
 		# types = data.dtypes
+		max_gain = -float("inf")
+		prime_split_val = 0
+		best_split_attr = 0
 		number_of_columns = data.shape[1]
 		parent_length = data.shape[0]
 		classes = np.unique(data[:,number_of_columns - 1])
@@ -112,30 +113,38 @@ class DecisionTree:
 		col_value_map = dict()
 		columns_rev = [x for x in range(number_of_columns) and x not in self.previous_split ]
 		for i in colums_rev:
-			unique = np.unique(data[:,i])
-			if(self.data_types[i] == "object" or self.data_types[i] == "int64"): #Nominal/Binary values
-				gini_col = 0
-				for value in unique:
-					set1 = data[np.where(data[:,i] == value)]
-					l1 = len(set1)
-					gini_col = gini_col + (l1/parent_length) * self.gini_node(set1,classes)
-				gain = gini_p - gini_col
-				gain_split.append(gain)
-				col_value_map[i] = None
-			else:
 				candidates = self.generate_candidates(sorted(data[:,i]), statistics.stdev(data[:,i]))
 				# print(candidates)
 				gini_col, split_val = self.get_best_candidate(data, candidates, i, classes)
 				# print("Gini col, split val",gini_col,split_val)
 				gain = gini_p - gini_col
-				gain_split.append(gain)
-				col_value_map[i] = split_val
+				if(gain > max_gain):
+					max_gain = gain
+					prime_split_val = split_val
+					best_split_attr = i
+		self.previous_split.append(max_index[0])
+		print("max_index", best_split_attr)
+		return best_split_attr, prime_split_val
 
 	def evaluate_stop_condition(self, data):
 		if (len(data[:,data.shape[1] - 1].unique()) == 1 or (len(data) <= self.min_threshold)):
 			return True 
 		else:
 			return False
+
+	def split_attr(self, data, val, child_index):
+		result_set = []
+		if val is None:
+			unique = np.unique(data[:,child_index])
+			for value in unique:
+				set1 = data[np.where(data[:,child_index] == value)]
+				result_set.append(set1)
+		else:
+			set1 = data[np.where(data[:,child_index] <= val)]
+			set2 = data[np.where(data[:,child_index] > val)]
+			result_set.append(set1)
+			result_set.append(set2)
+		return result_set
 
 	def buildTree(self, data):
 		print("len of data is", len(data))
@@ -157,27 +166,22 @@ class DecisionTree:
 		else:
 			root = Tree()
 			child_index, val = self.find_best_split(data, columns)
-			c_i = columns.where(columns == child_index)
-			c_i = c_i.dropna()
-			print("Delete att :", child_index)
-			print(c_i)
-			columns = columns.drop(labels=c_i)
 			print("split on attr ",child_index," with val", val)
 			root.split_index = child_index
 			result_set = self.split_attr(data, val, child_index)
-			root.child0dren = dict()
-			if val:
-				root.test_attr = val
-				child0= self.buildTree(result_set[0])
-				child1= self.buildTree(result_set[1])
-				root.children["less than equal"+str(val)] = child0
-				root.children["greater than "+str(val)] = child1
-			else:
-				unique = data[child_index].unique()
-				# print("U ",unique)
-				for i,set_child in enumerate(result_set):
-					child= self.buildTree(set_child, columns)
-					root.children[str(unique[i])] = (child)
+			root.children = dict()
+			# if val:
+			# 	root.test_attr = val
+			# 	child0= self.buildTree(result_set[0])
+			# 	child1= self.buildTree(result_set[1])
+			# 	root.children["less than equal"+str(val)] = child0
+			# 	root.children["greater than "+str(val)] = child1
+			# else:
+			unique = np.unique(data[:,child_index])
+			# print("U ",unique)
+			for i,set_child in enumerate(result_set):
+				child = self.buildTree(set_child, columns)
+				root.children[str(unique[i])] = (child)
 			return root
 
 	def fit(self, data, data_types):
