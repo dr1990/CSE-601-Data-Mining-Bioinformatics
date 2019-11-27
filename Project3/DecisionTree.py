@@ -1,9 +1,5 @@
 import pandas as pd
 import numpy as np
-import statistics
-import random
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.compose import ColumnTransformer, make_column_transformer
 
 
 def get_confusion_matrix(train_label, pred):
@@ -20,12 +16,11 @@ def get_confusion_matrix(train_label, pred):
     return cm
 
 
-str_ind = list()
-
-
 def readfile(filename):
     data = pd.read_csv(filename, header=None, sep="\t")
     data = np.array(data.values)
+
+    str_ind = list()
 
     for i in range(len(data[0])):
         if isinstance(data[0][i], str):
@@ -145,12 +140,8 @@ class DecisionTree:
 
         return min_gini_split, prime_candidate, left_child, right_child
 
-    def generate_candidates(self, col_values, std_dev):
+    def generate_candidates(self, col_values):
         candidates = list()
-        # if min(col_values) == 0:
-        #     previous = 0
-        # else:
-        #     previous = min(col_values) - std_dev
 
         prev = 0
         for value in col_values:
@@ -159,23 +150,27 @@ class DecisionTree:
             else:
                 candidates.append((prev + value) / 2)
                 prev = value
-        # candidates.append(col_values[-1] + std_dev)
+
         return candidates
 
     def find_best_split(self, root, data):
-        tree = Tree()
         prev_gain = float("inf")
-        row = data.shape[0]
         col = data.shape[1]
         classes = np.unique(data[:, col - 1])
         left_child = list()
         right_child = list()
+        gini_imp = float("inf")
+        split_val = 0
+        split_col = 0
 
         gini_p = self.gini_node(data)  # TODO: 1. Why do we need this? 2. can't we save this value?
 
         for i in range(col - 1):
             unique = np.unique(data[:, i])
-            candidates = self.generate_candidates(sorted(unique), 0)
+            candidates = self.generate_candidates(sorted(unique))
+            # df = pd.DataFrame(data)
+            # sorted_data = np.asarray(df.sort_values(by=i))
+
             gini_val, sv, lc, rc = self.get_best_candidate(data, candidates, i, classes)
 
             if prev_gain > gini_val:
@@ -186,31 +181,10 @@ class DecisionTree:
                 split_col = i
                 gini_imp = gini_val
 
-            # gain_split.append(gain)
-            # col_value_map[i] = split_val
-
-        # randomness added to choose from more than 1 max gain indices
-        # max_index = random.choice(np.where(gain_split == np.amax(gain_split))).flatten()
-
         if gini_p < gini_imp:
             return -1, None, None, None, None
 
         return split_col, split_val, left_child, right_child, gini_imp
-        # return max_index[0], col_value_map[max_index[0]]
-
-    def split_attr(self, data, val, child_index):
-        result_set = []
-        if val is None:
-            unique = data[child_index].unique()
-            for value in unique:
-                set1 = data.loc[data[child_index] == value]
-                result_set.append(set1)
-        else:
-            set1 = data.loc[data[child_index] <= val]
-            set2 = data.loc[data[child_index] > val]
-            result_set.appxend(set1)
-            result_set.append(set2)
-        return result_set
 
     def get_max_label(self, data):
         cnt = [0, 0]
@@ -227,7 +201,7 @@ class DecisionTree:
         if root is None:
             root = Tree()
 
-        split_index, val, lc, rc, gini_imp = self.find_best_split(root, data)
+        split_index, val, lc, rc, gini_impurity = self.find_best_split(root, data)
 
         # No further split
         if split_index == -1:
@@ -238,7 +212,7 @@ class DecisionTree:
 
         root.split_index = split_index
         root.test_attr = val
-        root.gini_imp = gini_imp
+        root.gini_imp = gini_impurity
 
         left_child = np.asarray(lc)
         right_child = np.asarray(rc)
@@ -338,6 +312,6 @@ def main(file, n):
 
 
 if __name__ == '__main__':
-    file = 'project3_dataset1.txt'
+    file = 'project3_dataset2.txt'
     n = 10
     main(file, n)
