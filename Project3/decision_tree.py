@@ -43,7 +43,7 @@ class DecisionTree:
 		# self.attributeset = attributeset
 		self.Tree = Tree()
 		self.previous_split = list()
-		self.min_threshold = 3
+		self.min_threshold = 10
 		self.classified_labels = None
 
 	def evaluate_stop_condition(self, data):

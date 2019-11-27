@@ -56,7 +56,7 @@ class DecisionTree:
 		return candidates
 
 	def get_best_candidate(self, data, candidates, col, classes):
-		sorted_data = data.sort(axis = 0, kind = 'heapsort', order=[str(col)])
+		sorted_data = data.sort(axis = 0, kind = 'heapsort', order=col)
 		length = len(data)
 		number_of_columns = data.shape[1] - 1
 		prime_candidate = candidates[0]
@@ -111,8 +111,8 @@ class DecisionTree:
 		gini_p = self.gini_node(data, classes, number_of_columns)
 		print("gini_p", gini_p)
 		col_value_map = dict()
-		columns_rev = [x for x in range(number_of_columns) and x not in self.previous_split ]
-		for i in colums_rev:
+		columns_rev = [x for x in range(number_of_columns) if x not in self.previous_split ]
+		for i in columns_rev:
 				candidates = self.generate_candidates(sorted(data[:,i]), statistics.stdev(data[:,i]))
 				# print(candidates)
 				gini_col, split_val = self.get_best_candidate(data, candidates, i, classes)
@@ -127,8 +127,8 @@ class DecisionTree:
 		return best_split_attr, prime_split_val
 
 	def evaluate_stop_condition(self, data):
-		if (len(data[:,data.shape[1] - 1].unique()) == 1 or (len(data) <= self.min_threshold)):
-			return True 
+		if (len(np.unique(data[:,data.shape[1] - 1])) == 1 or (len(data) <= self.min_threshold)):
+			return True
 		else:
 			return False
 
@@ -150,7 +150,7 @@ class DecisionTree:
 		print("len of data is", len(data))
 		if self.evaluate_stop_condition(data):#check stop condition
 			#if True, tree generation ends by creating Leaf
-			classes = data[-1].unique()
+			classes = np.unique(data[:,-1])
 			p = len(data)
 			relative_freq = []
 			if(len(classes) > 1):
@@ -165,7 +165,7 @@ class DecisionTree:
 			return leaf
 		else:
 			root = Tree()
-			child_index, val = self.find_best_split(data, columns)
+			child_index, val = self.find_best_split(data)
 			print("split on attr ",child_index," with val", val)
 			root.split_index = child_index
 			result_set = self.split_attr(data, val, child_index)
@@ -186,7 +186,7 @@ class DecisionTree:
 
 	def fit(self, data, data_types):
 		self.data_types = data_types
-		self.Tree = self.buildTree(data, len(data_types))
+		self.Tree = self.buildTree(data)
 
 def preprocess(data, types):
 	cols = len(types)
@@ -215,13 +215,13 @@ def main(file, n):
 	data = np.array(data)
 	print(len(data))
 	print(data_types[1])	
-	# split_data = np.array_split(data, n)
-	# for i in range(n):
-	# 	test = split_data[i]
-	# 	train = get_train_data(split_data, i)
-	# 	print(train)
-	# 	dc = DecisionTree()
-	# 	dc.fit(train, data_types)
+	split_data = np.array_split(data, n)
+	for i in range(1):
+		test = split_data[i]
+		train = get_train_data(split_data, i)
+		print(train)
+		dc = DecisionTree()
+		dc.fit(train, data_types)
 
 
 if __name__ == '__main__':
