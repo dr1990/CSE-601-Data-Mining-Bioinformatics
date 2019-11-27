@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import time
 
 
 def get_confusion_matrix(train_label, pred):
@@ -49,29 +50,47 @@ class Tree(object):
         self.gini_imp = float("inf")
         self.left_child_data = None
         self.right_child_data = None
+        self.gini_left = None
+        self.gini_right = None
+
+
+def get_gini_index(left, right):
+    class_count = np.zeros((2, 2), dtype='float')
+
+    left = np.asarray(left)
+    right = np.asarray(right)
+
+    if len(left) != 0:
+        for x in left[:, -1]:
+            class_count[int(x)][0] += 1
+        # class_count[:, 0] = class_count[:, 0] / len(left)
+
+    if len(right) != 0:
+        for x in right[:, -1]:
+            class_count[int(x)][1] += 1
+        # class_count[:, 1] = class_count[:, 1] / len(right)
+
+    total_len = len(left) + len(right)
+
+    l0 = class_count[0][0] / len(left)
+    l1 = class_count[1][0] / len(left)
+    r0 = class_count[0][1] / len(right)
+    r1 = class_count[1][1] / len(right)
+
+    gini_impurity_left = float(1.0 - (l0 ** 2) - (l1 ** 2))
+    gini_impurity_right = float(1.0 - (r0 ** 2) - (r1 ** 2))
+
+    return ((gini_impurity_left * len(left)) + (
+            gini_impurity_right * len(right))) / total_len, gini_impurity_left, gini_impurity_right
 
 
 class DecisionTree:
     """docstring for DecisionTree"""
 
     def __init__(self):
-        # self.attributeset = attributeset
         self.Tree = Tree()
-        self.min_threshold = 3
-        self.classified_labels = None
-
-    def evaluate_stop_condition(self, data):
-        if (len(np.unique(data[data.shape[1] - 1])) == 1 or (len(data) <= self.min_threshold)):
-            return True
-        else:
-            return False
 
     def gini_node(self, node_data):
-
-        # Assuming only two classes exist
-        # classet1 = [x for x in node_data if x[number_of_columns] == classes[0]]
-        # classet2 = [x for x in node_data if x[number_of_columns] == classes[1]]
-
         class_count = [0, 0]
         node_data = np.asarray(node_data)
         for x in node_data[:, -1]:
@@ -85,60 +104,62 @@ class DecisionTree:
         gini_impurity = (1 - ((lc1 / l1) ** 2 + (lc2 / l1) ** 2))
         return gini_impurity
 
-    def get_gini_index(self, left, right):
-        class_count = np.zeros((2, 2), dtype='float')
+    def split_data(self, data, candidate, col):
+        left = list()
+        right = list()
 
-        left = np.asarray(left)
-        right = np.asarray(right)
-
-        if len(left) != 0:
-            for x in left[:, -1]:
-                class_count[int(x)][0] += 1
-            # class_count[:, 0] = class_count[:, 0] / len(left)
-
-        if len(right) != 0:
-            for x in right[:, -1]:
-                class_count[int(x)][1] += 1
-            # class_count[:, 1] = class_count[:, 1] / len(right)
-
-        total_len = len(left) + len(right)
-
-        l0 = class_count[0][0] / len(left)
-        l1 = class_count[1][0] / len(left)
-        r0 = class_count[0][1] / len(right)
-        r1 = class_count[1][1] / len(right)
-
-        gini_impurity_left = float(1.0 - (l0 ** 2) - (l1 ** 2))
-        gini_impurity_right = float(1.0 - (r0 ** 2) - (r1 ** 2))
-
-        return ((gini_impurity_left * len(left)) + (gini_impurity_right * len(right))) / total_len
+        for x in data:
+            if x[col] <= candidate:
+                left.append(x)
+            else:
+                right.append(x)
+        return left, right
 
     def get_best_candidate(self, data, candidates, col, classes):  # fig 4.16
         min_gini_split = float("inf")
-        # prime_candidate = candidates[0] #TODO: ??
+
         prime_candidate = 0
 
         # Needs to be optimized
-        left_child = list()
-        right_child = list()
+
+        gini_imp_left = 0
+        gini_imp_right = 0
 
         for candidate in candidates:
-            left = list()
-            right = list()
+            class_count = np.zeros((2, 2), dtype='float')
+
             for x in data:
                 if x[col] <= candidate:
-                    left.append(x)  # can be optimized. we can calculate class_count values here.
+                    class_count[int(x[-1])][0] += 1
                 else:
-                    right.append(x)  # can be optimized. we can calculate class_count values here.
+                    class_count[int(x[-1])][1] += 1
 
-            gini_split = self.get_gini_index(left, right)
+            # gini_split, gini_left, gini_right = self.get_gini_index(left, right)
+
+            ####
+
+            # GINI Impurity Calculation
+            total_len = np.sum(class_count)
+
+            l0 = class_count[0][0] / np.sum(class_count[:, 0])
+            l1 = class_count[1][0] / np.sum(class_count[:, 0])
+            r0 = class_count[0][1] / np.sum(class_count[:, 1])
+            r1 = class_count[1][1] / np.sum(class_count[:, 1])
+
+            gini_impurity_left = float(1.0 - (l0 ** 2) - (l1 ** 2))
+            gini_impurity_right = float(1.0 - (r0 ** 2) - (r1 ** 2))
+
+            gini_split = ((gini_impurity_left * np.sum(class_count[:, 0])) + (gini_impurity_right * np.sum(class_count[:, 1]))) / total_len
+
+            #####
+
             if gini_split < min_gini_split:
                 min_gini_split = gini_split
                 prime_candidate = candidate
-                left_child = left
-                right_child = right
+                gini_imp_left = gini_impurity_left
+                gini_imp_right = gini_impurity_right
 
-        return min_gini_split, prime_candidate, left_child, right_child
+        return min_gini_split, prime_candidate, gini_imp_left, gini_imp_right
 
     def generate_candidates(self, col_values):
         candidates = list()
@@ -153,15 +174,15 @@ class DecisionTree:
 
         return candidates
 
-    def find_best_split(self, root, data):
+    def find_best_split(self, data):
         prev_gain = float("inf")
         col = data.shape[1]
         classes = np.unique(data[:, col - 1])
-        left_child = list()
-        right_child = list()
         gini_imp = float("inf")
         split_val = 0
         split_col = 0
+        gini_imp_left = 0
+        gini_imp_right = 0
 
         gini_p = self.gini_node(data)  # TODO: 1. Why do we need this? 2. can't we save this value?
 
@@ -171,20 +192,20 @@ class DecisionTree:
             # df = pd.DataFrame(data)
             # sorted_data = np.asarray(df.sort_values(by=i))
 
-            gini_val, sv, lc, rc = self.get_best_candidate(data, candidates, i, classes)
+            gini_val, sv, gl, gr = self.get_best_candidate(data, candidates, i, classes)
 
             if prev_gain > gini_val:
                 prev_gain = gini_val
-                left_child = lc
-                right_child = rc
                 split_val = sv
                 split_col = i
                 gini_imp = gini_val
+                gini_imp_left = gl
+                gini_imp_right = gr
 
         if gini_p < gini_imp:
             return -1, None, None, None, None
 
-        return split_col, split_val, left_child, right_child, gini_imp
+        return split_col, split_val, gini_imp, gini_imp_left, gini_imp_right
 
     def get_max_label(self, data):
         cnt = [0, 0]
@@ -201,7 +222,7 @@ class DecisionTree:
         if root is None:
             root = Tree()
 
-        split_index, val, lc, rc, gini_impurity = self.find_best_split(root, data)
+        split_index, val, gini_impurity, gl, gr = self.find_best_split(data)
 
         # No further split
         if split_index == -1:
@@ -213,15 +234,16 @@ class DecisionTree:
         root.split_index = split_index
         root.test_attr = val
         root.gini_imp = gini_impurity
+        root.gini_left = gl
+        root.gini_right = gr
 
-        left_child = np.asarray(lc)
-        right_child = np.asarray(rc)
+        lc, rc = self.split_data(data, val, split_index)
 
-        root.left_child_data = left_child
-        root.right_child_data = right_child
+        root.left_child_data = np.asarray(lc)
+        root.right_child_data = np.asarray(rc)
 
-        if len(left_child) != 0:
-            if len(np.unique(left_child[:, -1])) == 1:
+        if len(root.left_child_data) != 0:
+            if len(np.unique(root.left_child_data[:, -1])) == 1:
                 root.left_child = Tree()
                 root.left_child.label = self.get_max_label(root.left_child_data)
                 root.left_child_data = None
@@ -229,8 +251,8 @@ class DecisionTree:
                 root.left_child = self.buildTree(root.left_child, root.left_child_data)
                 root.left_child_data = None
 
-        if len(right_child) != 0:
-            if len(np.unique(right_child[:, -1])) == 1:
+        if len(root.right_child_data) != 0:
+            if len(np.unique(root.right_child_data[:, -1])) == 1:
                 root.right_child = Tree()
                 root.right_child.label = self.get_max_label(root.right_child_data)
                 root.right_child_data = None
@@ -241,8 +263,6 @@ class DecisionTree:
         return root
 
     def fit(self, data):
-        # root = Tree()
-        # root.gini_imp = self.gini_node(data)
         self.Tree = self.buildTree(self.Tree, data)
         print("Tree Built.")
 
@@ -256,10 +276,8 @@ class DecisionTree:
                     root = root.children[str(data.loc[row, root.split_index])]
                 else:
                     if data[row][root.split_index] <= root.test_attr:
-                        # root = root.children["less than equal" + str(root.test_attr)]
                         root = root.left_child
                     else:
-                        # root = root.children["greater than " + str(root.test_attr)]
                         root = root.right_child
             labels.append(int(root.label))
         self.classified_labels = labels
@@ -298,12 +316,18 @@ def main(file, n):
         dc = DecisionTree()
         dc.fit(train)
         dc.classify(test)
-        accuracy, precision, recall, f1_measure = dc.accuracy_measures(test[:, test.shape[1] - 1])
+        accuracy, precision, recall, f1_measure = dc.accuracy_measures(test[:, -1])
 
         accuracy_list.append(accuracy)
         precision_list.append(precision)
         recall_list.append(recall)
         f1_measure_list.append(f1_measure)
+
+        # print("Accuracy: ", accuracy)
+        # print("Precision: ", precision)
+        # print("Recall: ", recall)
+        # print("F1-Measure: ", f1_measure)
+        # print()
 
     print("Accuracy: ", sum(accuracy_list) / n)
     print("Precision: ", sum(precision_list) / n)
@@ -312,6 +336,10 @@ def main(file, n):
 
 
 if __name__ == '__main__':
-    file = 'project3_dataset2.txt'
+    file = 'project3_dataset1.txt'
     n = 10
+    start = time.time()
     main(file, n)
+    done = time.time()
+    elapsed = done - start
+    print(elapsed)
