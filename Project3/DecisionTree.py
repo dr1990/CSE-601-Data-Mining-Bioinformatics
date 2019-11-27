@@ -80,7 +80,7 @@ class DecisionTree:
         class_count = [0, 0]
         node_data = np.asarray(node_data)
         for x in node_data[:, -1]:
-            class_count[x] += 1
+            class_count[int(x)] += 1
 
         l1 = len(node_data)
 
@@ -98,12 +98,12 @@ class DecisionTree:
 
         if len(left) != 0:
             for x in left[:, -1]:
-                class_count[x][0] += 1
+                class_count[int(x)][0] += 1
             # class_count[:, 0] = class_count[:, 0] / len(left)
 
         if len(right) != 0:
             for x in right[:, -1]:
-                class_count[x][1] += 1
+                class_count[int(x)][1] += 1
             # class_count[:, 1] = class_count[:, 1] / len(right)
 
         total_len = len(left) + len(right)
@@ -216,7 +216,7 @@ class DecisionTree:
         cnt = [0, 0]
 
         for x in data[:, -1]:
-            cnt[x] += 1
+            cnt[int(x)] += 1
 
         if cnt[0] > cnt[1]:
             return 0
@@ -270,7 +270,7 @@ class DecisionTree:
         # root = Tree()
         # root.gini_imp = self.gini_node(data)
         self.Tree = self.buildTree(self.Tree, data)
-        print()
+        print("Tree Built.")
 
     def classify(self, data):
         labels = []
@@ -338,6 +338,6 @@ def main(file, n):
 
 
 if __name__ == '__main__':
-    file = 'project3_dataset2.txt'
+    file = 'project3_dataset1.txt'
     n = 10
     main(file, n)
