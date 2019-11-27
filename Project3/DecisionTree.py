@@ -115,43 +115,56 @@ class DecisionTree:
                 right.append(x)
         return left, right
 
-    def get_best_candidate(self, data, candidates, col, classes):  # fig 4.16
+    def get_best_candidate(self, data, candidates, col):  # fig 4.16
         min_gini_split = float("inf")
-
         prime_candidate = 0
-
-        # Needs to be optimized
 
         gini_imp_left = 0
         gini_imp_right = 0
 
-        for candidate in candidates:
-            class_count = np.zeros((2, 2), dtype='float')
+        candidate_gini_table = np.zeros((len(candidates), 2, 2), dtype='int')
 
-            for x in data:
-                if x[col] <= candidate:
-                    class_count[int(x[-1])][0] += 1
-                else:
-                    class_count[int(x[-1])][1] += 1
+        # candidate_gini_table[i]
+        # label:  <= | >
+        #   0:     a | b
+        #   1:     c | d
 
-            # gini_split, gini_left, gini_right = self.get_gini_index(left, right)
+        for i, candidate in enumerate(candidates):
+            if i == 0:
+                for x in data:
+                    if x[col] <= candidate:
+                        candidate_gini_table[i][int(x[-1])][0] += 1
+                    else:
+                        candidate_gini_table[i][int(x[-1])][1] += 1
 
-            ####
+            else:
+                inc = np.zeros(2, dtype='int')
 
-            # GINI Impurity Calculation
-            total_len = np.sum(class_count)
+                for x in data:
+                    if x[col] <= candidate:  # TODO: Can be optimized for O(n)
+                        inc[int(x[-1])] += 1
+                    else:
+                        diff_zero = inc[0] - candidate_gini_table[i - 1][0][0]
+                        diff_one = inc[1] - candidate_gini_table[i - 1][1][0]
 
-            l0 = class_count[0][0] / np.sum(class_count[:, 0])
-            l1 = class_count[1][0] / np.sum(class_count[:, 0])
-            r0 = class_count[0][1] / np.sum(class_count[:, 1])
-            r1 = class_count[1][1] / np.sum(class_count[:, 1])
+                        candidate_gini_table[i][0][0] = inc[0]
+                        candidate_gini_table[i][1][0] = inc[1]
+                        candidate_gini_table[i][0][1] = candidate_gini_table[i - 1][0][1] - diff_zero
+                        candidate_gini_table[i][1][1] = candidate_gini_table[i - 1][1][1] - diff_one
+                        break
+
+            total_len = np.sum(candidate_gini_table[i])
+
+            l0 = candidate_gini_table[i][0][0] / np.sum(candidate_gini_table[i][:, 0])
+            l1 = candidate_gini_table[i][1][0] / np.sum(candidate_gini_table[i][:, 0])
+            r0 = candidate_gini_table[i][0][1] / np.sum(candidate_gini_table[i][:, 1])
+            r1 = candidate_gini_table[i][1][1] / np.sum(candidate_gini_table[i][:, 1])
 
             gini_impurity_left = float(1.0 - (l0 ** 2) - (l1 ** 2))
             gini_impurity_right = float(1.0 - (r0 ** 2) - (r1 ** 2))
 
-            gini_split = ((gini_impurity_left * np.sum(class_count[:, 0])) + (gini_impurity_right * np.sum(class_count[:, 1]))) / total_len
-
-            #####
+            gini_split = ((gini_impurity_left * np.sum(candidate_gini_table[i][:, 0])) + (
+                    gini_impurity_right * np.sum(candidate_gini_table[i][:, 1]))) / total_len
 
             if gini_split < min_gini_split:
                 min_gini_split = gini_split
@@ -189,10 +202,11 @@ class DecisionTree:
         for i in range(col - 1):
             unique = np.unique(data[:, i])
             candidates = self.generate_candidates(sorted(unique))
-            # df = pd.DataFrame(data)
-            # sorted_data = np.asarray(df.sort_values(by=i))
 
-            gini_val, sv, gl, gr = self.get_best_candidate(data, candidates, i, classes)
+            df = pd.DataFrame(data)
+            sorted_data = np.asarray(df.sort_values(by=i))
+
+            gini_val, sv, gl, gr = self.get_best_candidate(sorted_data, candidates, i)
 
             if prev_gain > gini_val:
                 prev_gain = gini_val
