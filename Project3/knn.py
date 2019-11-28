@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cdist
+import math
 
 
 def readfile(filename):
@@ -78,9 +79,7 @@ def get_train_data(split_data, ind):
     return np.vstack([x for i, x in enumerate(split_data) if i != ind])
 
 
-def main(file, k, n):
-    data = readfile(file)
-
+def main(k, n, data):
     accuracy_list = list()
     precision_list = list()
     recall_list = list()
@@ -110,10 +109,56 @@ def main(file, k, n):
     print("Precision: ", sum(precision_list) / n)
     print("Recall: ", sum(recall_list) / n)
     print("F1-Measure: ", sum(f1_measure_list) / n)
+    print("")
+    return sum(accuracy_list) / n, sum(precision_list) / n, sum(recall_list) / n, sum(f1_measure_list) / n
 
+
+import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
-    file = 'project3_dataset2.txt'
-    k = 5
-    n = 10
-    main(file, k, n)
+    file = 'project3_dataset1.txt'
+    data = readfile(file)
+    a_list = list()
+    b_list = list()
+    c_list = list()
+    d_list = list()
+
+    for k in range(1, 10):
+        # k = int(math.sqrt(np.shape(data)[0]))
+        # 10-fold validation
+        n = 10
+        # k = 6
+        a, b, c, d = main(k, n, data)
+        a_list.append(a)
+        b_list.append(b)
+        c_list.append(c)
+        d_list.append(d)
+
+    fig = plt.figure(figsize=[12, 6])
+    ax = fig.gca
+    plt.subplot(221)
+    plt.plot(a_list)
+    plt.subplot(222)
+    plt.plot(b_list)
+    plt.subplot(223)
+    plt.plot(c_list)
+    plt.subplot(224)
+    plt.plot(d_list)
+    print()
+
+    # k = 40, n = 10
+    # Accuracy: 0.6708140610545792
+    # Precision: 0.6829857306785091
+    # Recall: 0.9188686251376005
+    # F1 - Measure: 0.7822417924774905
+
+    # k = int(math.sqrt(np.shape(data)[0]))
+    # n = 10
+    # Accuracy: 0.6686864014801109
+    # Precision: 0.6965914265914266
+    # Recall: 0.8710209813993022
+    # F1 - Measure: 0.7722690320403298
+
+    # second dataset params
+    # k = 15 -> precision
+    # k = ->
