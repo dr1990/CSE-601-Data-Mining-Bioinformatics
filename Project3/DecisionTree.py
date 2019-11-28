@@ -52,6 +52,7 @@ class Tree(object):
         self.right_child_data = None
         self.gini_left = None
         self.gini_right = None
+        self.visited_node = list()
 
 
 def get_gini_index(left, right):
@@ -92,7 +93,7 @@ class DecisionTree:
         self.threshold = 1
         self.variable_feature = variable_feature
         self.m = m
-        self.visited_feature = list()
+        # self.visited_feature = list()
 
     def stopping_condition(self, data):
         return len(data) <= self.threshold or (len(np.unique(data[:, -1])) == 1)
@@ -197,27 +198,31 @@ class DecisionTree:
 
         return candidates
 
-    def get_feature_list(self, cols):
-        available_features = [x for x in range(cols) if x not in self.visited_feature]
+    def get_feature_list(self, cols, root):
+        if use_visited_col:
+            available_features = [x for x in range(cols)]
+        else:
+            available_features = [x for x in range(cols) if x not in root.visited_node]
         np.random.shuffle(available_features)
         return available_features[0:self.m]
 
-    def find_best_split(self, data):
+    def find_best_split(self, data, root):
         prev_gain = float("inf")
-        col = data.shape[1]
         gini_imp = float("inf")
         split_val = 0
         split_col = -1
         gini_imp_left = 0
         gini_imp_right = 0
 
-        # gini_p = self.gini_node(data)  # TODO: 1. Why do we need this? 2. can't we save this value?
-
         if self.variable_feature:
-            feature_list = self.get_feature_list(data.shape[1] - 1)
+            feature_list = self.get_feature_list(data.shape[1] - 1, root)
         else:
-            feature_list = [x for x in range(data.shape[1] - 1) if x not in self.visited_feature]
+            if use_visited_col:
+                feature_list = [x for x in range(data.shape[1] - 1)]
+            else:
+                feature_list = [x for x in range(data.shape[1] - 1) if x not in root.visited_node]
 
+        # print()
         for i in feature_list:
             unique = np.unique(data[:, i])
             candidates = self.generate_candidates(sorted(unique))
@@ -235,12 +240,16 @@ class DecisionTree:
                 gini_imp_left = gl
                 gini_imp_right = gr
 
-        if len(feature_list) == 0:
-            return -1, None, None, None, None
-
         # Comment this in order to repeat the column in the
-        self.visited_feature.append(split_col)
+        if not use_visited_col:
+            if len(feature_list) == 0:
+                return -1, None, None, None, None
 
+            # root.append(split_col)
+
+        if gini_imp == float("inf"):
+            return -1, None, None, None, None
+            print()
         return split_col, split_val, gini_imp, gini_imp_left, gini_imp_right
 
     def get_max_label(self, data):
@@ -255,16 +264,14 @@ class DecisionTree:
             return 1
 
     def buildTree(self, root, data):
-        if root is None:
-            root = Tree()
-
-        split_index, val, gini_impurity, gl, gr = self.find_best_split(data)
+        split_index, val, gini_impurity, gl, gr = self.find_best_split(data, root)
 
         # No further split
         if split_index == -1:
             root.label = self.get_max_label(data)
             root.left_child_data = None
             root.right_child_data = None
+            # self.visited_feature.remove(split_index)
             return root
 
         root.split_index = split_index
@@ -272,6 +279,7 @@ class DecisionTree:
         root.gini_imp = gini_impurity
         root.gini_left = gl
         root.gini_right = gr
+        root.visited_node.append(split_index)
 
         lc, rc = self.split_data(data, val, split_index)
 
@@ -285,7 +293,9 @@ class DecisionTree:
                 root.left_child.label = self.get_max_label(root.left_child_data)
                 root.left_child_data = None
             else:
-                root.left_child = self.buildTree(root.left_child, root.left_child_data)
+                left_child = Tree()
+                left_child.visited_node.extend(root.visited_node)
+                root.left_child = self.buildTree(left_child, root.left_child_data)
                 root.left_child_data = None
 
         if len(root.right_child_data) != 0:
@@ -294,8 +304,11 @@ class DecisionTree:
                 root.right_child = Tree()
                 root.right_child.label = self.get_max_label(root.right_child_data)
                 root.right_child_data = None
+
             else:
-                root.right_child = self.buildTree(root.right_child, root.right_child_data)
+                right_child = Tree()
+                right_child.visited_node.extend(root.visited_node)
+                root.right_child = self.buildTree(right_child, root.right_child_data)
                 root.right_child_data = None
 
         return root
@@ -375,8 +388,10 @@ def main(file, n):
     print("F1-Measure: ", sum(f1_measure_list) / n)
 
 
+use_visited_col = False
+
 if __name__ == '__main__':
-    file = 'project3_dataset1.txt'
+    file = 'project3_dataset2.txt'
     n = 10
     start = time.time()
     main(file, n)
