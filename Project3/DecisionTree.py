@@ -87,8 +87,16 @@ def get_gini_index(left, right):
 class DecisionTree:
     """docstring for DecisionTree"""
 
-    def __init__(self):
+    def __init__(self, variable_feature=False, m=0):
         self.Tree = Tree()
+        self.threshold = 1
+        self.variable_feature = variable_feature
+        self.m = m
+        self.visited_feature = list()
+
+    def stopping_condition(self, data):
+        return len(data) <= self.threshold or (len(np.unique(data[:, -1])) == 1)
+        # return (len(np.unique(data[:, -1])) == 1)
 
     def gini_node(self, node_data):
         class_count = [0, 0]
@@ -176,29 +184,41 @@ class DecisionTree:
 
     def generate_candidates(self, col_values):
         candidates = list()
+        first = True
+        prev = 0.0
 
-        prev = 0
         for value in col_values:
-            if prev == 0:
+            if first:
                 prev = value
+                first = False
             else:
                 candidates.append((prev + value) / 2)
                 prev = value
 
         return candidates
 
+    def get_feature_list(self, cols):
+        available_features = [x for x in range(cols) if x not in self.visited_feature]
+        np.random.shuffle(available_features)
+        return available_features[0:self.m]
+
     def find_best_split(self, data):
         prev_gain = float("inf")
         col = data.shape[1]
         gini_imp = float("inf")
         split_val = 0
-        split_col = 0
+        split_col = -1
         gini_imp_left = 0
         gini_imp_right = 0
 
         # gini_p = self.gini_node(data)  # TODO: 1. Why do we need this? 2. can't we save this value?
 
-        for i in range(col - 1):
+        if self.variable_feature:
+            feature_list = self.get_feature_list(data.shape[1] - 1)
+        else:
+            feature_list = [x for x in range(data.shape[1] - 1) if x not in self.visited_feature]
+
+        for i in feature_list:
             unique = np.unique(data[:, i])
             candidates = self.generate_candidates(sorted(unique))
 
@@ -215,8 +235,11 @@ class DecisionTree:
                 gini_imp_left = gl
                 gini_imp_right = gr
 
-        # if gini_p < gini_imp:
-        #     return -1, None, None, None, None
+        if len(feature_list) == 0:
+            return -1, None, None, None, None
+
+        # Comment this in order to repeat the column in the
+        self.visited_feature.append(split_col)
 
         return split_col, split_val, gini_imp, gini_imp_left, gini_imp_right
 
@@ -256,7 +279,8 @@ class DecisionTree:
         root.right_child_data = np.asarray(rc)
 
         if len(root.left_child_data) != 0:
-            if len(np.unique(root.left_child_data[:, -1])) == 1:
+            # if len(np.unique(root.left_child_data[:, -1])) == 1:
+            if self.stopping_condition(root.left_child_data):
                 root.left_child = Tree()
                 root.left_child.label = self.get_max_label(root.left_child_data)
                 root.left_child_data = None
@@ -265,7 +289,8 @@ class DecisionTree:
                 root.left_child_data = None
 
         if len(root.right_child_data) != 0:
-            if len(np.unique(root.right_child_data[:, -1])) == 1:
+            # if len(np.unique(root.right_child_data[:, -1])) == 1:
+            if self.stopping_condition(root.right_child_data):
                 root.right_child = Tree()
                 root.right_child.label = self.get_max_label(root.right_child_data)
                 root.right_child_data = None
@@ -326,7 +351,7 @@ def main(file, n):
         test = split_data[i]
         train = get_train_data(split_data, i)
 
-        dc = DecisionTree()
+        dc = DecisionTree(False)
         dc.fit(train)
         dc.classify(test)
         accuracy, precision, recall, f1_measure = dc.accuracy_measures(test[:, -1])
@@ -335,6 +360,8 @@ def main(file, n):
         precision_list.append(precision)
         recall_list.append(recall)
         f1_measure_list.append(f1_measure)
+
+        del dc
 
         # print("Accuracy: ", accuracy)
         # print("Precision: ", precision)
@@ -349,7 +376,7 @@ def main(file, n):
 
 
 if __name__ == '__main__':
-    file = 'project3_dataset2.txt'
+    file = 'project3_dataset1.txt'
     n = 10
     start = time.time()
     main(file, n)
