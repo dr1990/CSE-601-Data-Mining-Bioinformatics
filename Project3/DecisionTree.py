@@ -181,6 +181,8 @@ class DecisionTree:
                 gini_imp_left = gini_impurity_left
                 gini_imp_right = gini_impurity_right
 
+        # if min_gini_split == 0.0:
+        #     print()
         return min_gini_split, prime_candidate, gini_imp_left, gini_imp_right
 
     def generate_candidates(self, col_values):
@@ -201,18 +203,19 @@ class DecisionTree:
     def get_feature_list(self, cols, root):
         if use_visited_col:
             available_features = [x for x in range(cols)]
+            return available_features
         else:
             available_features = [x for x in range(cols) if x not in root.visited_node]
-        np.random.shuffle(available_features)
-        return available_features[0:self.m]
+            np.random.shuffle(available_features)
+            return available_features[0:self.m]
 
     def find_best_split(self, data, root):
         prev_gain = float("inf")
         gini_imp = float("inf")
-        split_val = 0
+        split_val = -1
         split_col = -1
-        gini_imp_left = 0
-        gini_imp_right = 0
+        gini_imp_left = -1
+        gini_imp_right = -1
 
         if self.variable_feature:
             feature_list = self.get_feature_list(data.shape[1] - 1, root)
@@ -240,6 +243,9 @@ class DecisionTree:
                 gini_imp_left = gl
                 gini_imp_right = gr
 
+        # if gini_imp == 0.0:
+        #     print()
+
         # Comment this in order to repeat the column in the
         if not use_visited_col:
             if len(feature_list) == 0:
@@ -249,7 +255,7 @@ class DecisionTree:
 
         if gini_imp == float("inf"):
             return -1, None, None, None, None
-            print()
+            # print()
         return split_col, split_val, gini_imp, gini_imp_left, gini_imp_right
 
     def get_max_label(self, data):
@@ -263,14 +269,33 @@ class DecisionTree:
         else:
             return 1
 
+    def gini_parent(self, node_data):
+        class_count = [0, 0]
+
+        for x in node_data[:, -1]:
+            class_count[int(x)] += 1
+
+        l1 = len(node_data)
+
+        lc1 = class_count[0]
+        lc2 = class_count[1]
+
+        gini_impurity = (1 - ((lc1 / l1) ** 2 + (lc2 / l1) ** 2))
+
+        return gini_impurity
+
     def buildTree(self, root, data):
         split_index, val, gini_impurity, gl, gr = self.find_best_split(data, root)
 
+        gini_parent = self.gini_parent(data)
+
+        # if split_index != -1 and gini_parent < gini_impurity:
+        #     print()
         # No further split
-        if split_index == -1:
+        if split_index == -1 or gini_impurity == 0.0 or gini_parent < gini_impurity:
             root.label = self.get_max_label(data)
-            root.left_child_data = None
-            root.right_child_data = None
+            # root.left_child_data = None
+            # root.right_child_data = None
             # self.visited_feature.remove(split_index)
             return root
 
@@ -291,25 +316,25 @@ class DecisionTree:
             if self.stopping_condition(root.left_child_data):
                 root.left_child = Tree()
                 root.left_child.label = self.get_max_label(root.left_child_data)
-                root.left_child_data = None
+                # root.left_child_data = None
             else:
                 left_child = Tree()
                 left_child.visited_node.extend(root.visited_node)
                 root.left_child = self.buildTree(left_child, root.left_child_data)
-                root.left_child_data = None
+                # root.left_child_data = None
 
         if len(root.right_child_data) != 0:
             # if len(np.unique(root.right_child_data[:, -1])) == 1:
             if self.stopping_condition(root.right_child_data):
                 root.right_child = Tree()
                 root.right_child.label = self.get_max_label(root.right_child_data)
-                root.right_child_data = None
+                # root.right_child_data = None
 
             else:
                 right_child = Tree()
                 right_child.visited_node.extend(root.visited_node)
                 root.right_child = self.buildTree(right_child, root.right_child_data)
-                root.right_child_data = None
+                # root.right_child_data = None
 
         return root
 
