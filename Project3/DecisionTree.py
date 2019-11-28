@@ -190,14 +190,13 @@ class DecisionTree:
     def find_best_split(self, data):
         prev_gain = float("inf")
         col = data.shape[1]
-        classes = np.unique(data[:, col - 1])
         gini_imp = float("inf")
         split_val = 0
         split_col = 0
         gini_imp_left = 0
         gini_imp_right = 0
 
-        gini_p = self.gini_node(data)  # TODO: 1. Why do we need this? 2. can't we save this value?
+        # gini_p = self.gini_node(data)  # TODO: 1. Why do we need this? 2. can't we save this value?
 
         for i in range(col - 1):
             unique = np.unique(data[:, i])
@@ -216,8 +215,8 @@ class DecisionTree:
                 gini_imp_left = gl
                 gini_imp_right = gr
 
-        if gini_p < gini_imp:
-            return -1, None, None, None, None
+        # if gini_p < gini_imp:
+        #     return -1, None, None, None, None
 
         return split_col, split_val, gini_imp, gini_imp_left, gini_imp_right
 
@@ -350,7 +349,7 @@ def main(file, n):
 
 
 if __name__ == '__main__':
-    file = 'project3_dataset1.txt'
+    file = 'project3_dataset2.txt'
     n = 10
     start = time.time()
     main(file, n)
