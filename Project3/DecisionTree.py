@@ -124,7 +124,7 @@ class DecisionTree:
                 right.append(x)
         return left, right
 
-    def get_best_candidate(self, data, candidates, col):  # fig 4.16
+    def get_best_candidate(self, data, candidates, col, label_count):  # fig 4.16
         min_gini_split = float("inf")
         prime_candidate = 0
 
@@ -138,29 +138,27 @@ class DecisionTree:
         #   0:     a | b
         #   1:     c | d
 
+        k = 0
         for i, candidate in enumerate(candidates):
-            if i == 0:
-                for x in data:
-                    if x[col] <= candidate:
-                        candidate_gini_table[i][int(x[-1])][0] += 1
-                    else:
-                        candidate_gini_table[i][int(x[-1])][1] += 1
-
-            else:
-                inc = np.zeros(2, dtype='int')
-
-                for x in data:
-                    if x[col] <= candidate:  # TODO: Can be optimized for O(n)
-                        inc[int(x[-1])] += 1
-                    else:
-                        diff_zero = inc[0] - candidate_gini_table[i - 1][0][0]
-                        diff_one = inc[1] - candidate_gini_table[i - 1][1][0]
-
+            inc = np.zeros(2, dtype='int')
+            cnt = 0
+            for x in data[k:, :]:
+                if x[col] <= candidate:
+                    inc[int(x[-1])] += 1
+                    cnt += 1
+                else:
+                    k += cnt
+                    if i == 0:
                         candidate_gini_table[i][0][0] = inc[0]
                         candidate_gini_table[i][1][0] = inc[1]
-                        candidate_gini_table[i][0][1] = candidate_gini_table[i - 1][0][1] - diff_zero
-                        candidate_gini_table[i][1][1] = candidate_gini_table[i - 1][1][1] - diff_one
-                        break
+                        candidate_gini_table[i][0][1] = label_count[0] - inc[0]
+                        candidate_gini_table[i][1][1] = label_count[1] - inc[1]
+                    else:
+                        candidate_gini_table[i][0][0] = candidate_gini_table[i - 1][0][0] + inc[0]
+                        candidate_gini_table[i][1][0] = candidate_gini_table[i - 1][1][0] + inc[1]
+                        candidate_gini_table[i][0][1] = candidate_gini_table[i - 1][0][1] - inc[0]
+                        candidate_gini_table[i][1][1] = candidate_gini_table[i - 1][1][1] - inc[1]
+                    break
 
             total_len = np.sum(candidate_gini_table[i])
 
@@ -209,7 +207,7 @@ class DecisionTree:
             np.random.shuffle(available_features)
             return available_features[0:self.m]
 
-    def find_best_split(self, data, root):
+    def find_best_split(self, data, root, label_count):
         prev_gain = float("inf")
         gini_imp = float("inf")
         split_val = -1
@@ -233,7 +231,7 @@ class DecisionTree:
             df = pd.DataFrame(data)
             sorted_data = np.asarray(df.sort_values(by=i))
 
-            gini_val, sv, gl, gr = self.get_best_candidate(sorted_data, candidates, i)
+            gini_val, sv, gl, gr = self.get_best_candidate(sorted_data, candidates, i, label_count)
 
             if prev_gain > gini_val:
                 prev_gain = gini_val
@@ -284,13 +282,23 @@ class DecisionTree:
 
         return gini_impurity
 
+    def get_class_count(self, data):
+        total = [0, 0]
+
+        for x in data:
+            total[int(x[-1])] += 1
+
+        return total
+
     def buildTree(self, root, data):
-        split_index, val, gini_impurity, gl, gr = self.find_best_split(data, root)
+        label_count = self.get_class_count(data)
+
+        split_index, val, gini_impurity, gl, gr = self.find_best_split(data, root, label_count)
 
         gini_parent = self.gini_parent(data)
 
-        # if split_index != -1 and gini_parent < gini_impurity:
-        #     print()
+        if split_index != -1 and gini_parent < gini_impurity:
+            print()
         # No further split
         if split_index == -1 or gini_impurity == 0.0 or gini_parent < gini_impurity:
             root.label = self.get_max_label(data)
@@ -416,7 +424,7 @@ def main(file, n):
 use_visited_col = False
 
 if __name__ == '__main__':
-    file = 'project3_dataset2.txt'
+    file = 'project3_dataset1.txt'
     n = 10
     start = time.time()
     main(file, n)
