@@ -49,6 +49,7 @@ def main(file_train_data, file_train_labels, file_test_data):
 	scaler = StandardScaler()
 	scaler.fit(data_feature)
 	data_feature = scaler.transform(data_feature)
+	test_features = scaler.transform(test_features)
 
 	# classifiers = list()
 	clf1 = LogisticRegression(solver='liblinear', random_state=1)
@@ -67,10 +68,10 @@ def main(file_train_data, file_train_labels, file_test_data):
 	eclf.fit(data_feature, data_label)
 	predicted_labels = eclf.predict(test_features)
 	results_arr = list()
-	for i in zip(pd.DataFrame(test_features).index, predicted_labels):
+	for i in zip(test[0:,0], predicted_labels):
 		results_arr.append(i)
 	result = pd.DataFrame(results_arr)
-	result.to_csv("test_labels_ensemble.csv", columns=[0,1],header=None, index=None)
+	result.to_csv("submission.csv", columns=[0,1],header=["id", "label"], index=None)
 
 if __name__ == '__main__':
     file_train_data = 'train_features.csv'
