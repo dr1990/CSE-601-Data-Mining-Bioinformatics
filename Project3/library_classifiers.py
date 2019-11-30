@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import time
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer, make_column_transformer
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
@@ -11,7 +13,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.ensemble import VotingClassifier
 from sklearn.model_selection import cross_val_score
-
+from sklearn.decomposition import PCA
 
 
 
@@ -51,24 +53,25 @@ def main(file_train_data, file_train_labels, file_test_data):
 	data_feature = scaler.transform(data_feature)
 	test_features = scaler.transform(test_features)
 
-	# classifiers = list()
+	print(data_feature.shape)
+	classifiers = list()
 	clf1 = LogisticRegression(solver='liblinear', random_state=1)
-	clf2 = RandomForestClassifier(n_estimators=100, random_state=1)
+	# clf2 = RandomForestClassifier(n_estimators=100, random_state=1)
 	# clf3 = GaussianNB()
 	clf4 = KNeighborsClassifier(n_neighbors=3, algorithm='auto')
 	clf5 = SVC(gamma='auto')
 	# clf6 = AdaBoostClassifier(n_estimators=100, random_state=1)
-	eclf = VotingClassifier(estimators=[('lreg', clf1), ('randf', clf2), 
+	eclf = VotingClassifier(estimators=[('lreg', clf1),  
 		('knn', clf4), ('svm', clf5),], voting='hard')
-	classifiers = [clf1, clf2, clf4, clf5, eclf]
-	for clf, label in zip(classifiers, ['Logistic Regression', 'Random Forest', 'K Neighbors', 'SVM','Ensemble']):
+	classifiers = [clf1, clf4, clf5, eclf]
+	for clf, label in zip(classifiers, ['Logistic Regression', 'K Neighbors', 'SVM','Ensemble']):
 		scores = cross_val_score(clf, data_feature, data_label, cv=10, scoring='accuracy')
 		print("Accuracy: %0.2f (+/- %0.2f) [%s]" % (scores.mean(), scores.std(), label))
 
 	eclf.fit(data_feature, data_label)
 	predicted_labels = eclf.predict(test_features)
 	results_arr = list()
-	for i in zip(test[0:,0], predicted_labels):
+	for i in zip(test[0:,0].astype("int32"), predicted_labels):
 		results_arr.append(i)
 	result = pd.DataFrame(results_arr)
 	result.to_csv("submission.csv", columns=[0,1],header=["id", "label"], index=None)
