@@ -1,10 +1,12 @@
 import numpy as np
 import pandas as pd
 
-fileName = 'project3_dataset2.txt'
+fileName = 'project3_dataset4.txt'
 data = pd.read_csv(fileName, sep='\t', header=None, index_col=None)
 data.rename(columns={data.columns[-1]: "class"}, inplace=True)
 
+performCrossFold = False
+performErrorCorrection = False
 # Cross fold validation steps
 split_count = 10
 
@@ -13,14 +15,18 @@ split_count = 10
 nominal_attr_idx = [i for i, x in enumerate(data.dtypes) if x == 'object']
 
 # Replacing nominal attributes with corresponding integer values
+nominal_attr_map = dict()  # stores nominal attributes index to values mapping
 for i in nominal_attr_idx:
     unique_vals = data[i].unique()
     unique_vals.sort();
+    val_map = dict()
     for index, j in enumerate(unique_vals):
         data[i] = data[i].replace(j, index)
+        val_map[j] = index
+    nominal_attr_map[i] = val_map
 
 
-# print(data)
+# data
 
 # Method that calculates description posterior in the Naive Bayes formula i.e P(X|Hi)
 # row - A row from the validation data set passed by DataFrame.apply()
@@ -39,10 +45,11 @@ def computeDescriptorPosterior(row, mean, std, class_stats, nominal_probs):
     prob = constant * np.exp(-num / (den))
 
     # Laplacian error correction for zero probabilities
-    for i in range(prob.shape[0]):
-        for j in range(prob.shape[1]):
-            if prob[i][j] == 0:
-                prob[i][j] = 1 / class_stats[i]
+    if performErrorCorrection:
+        for i in range(prob.shape[0]):
+            for j in range(prob.shape[1]):
+                if prob[i][j] == 0:
+                    prob[i][j] = 1 / class_stats[i]
 
     # removing the nominal attribute probability from the computed results
     # not eliminated earlier for ease of computation
@@ -61,7 +68,7 @@ def computeDescriptorPosterior(row, mean, std, class_stats, nominal_probs):
         nominal_prob_dict = nominal_probs[i]
         for j in range(len(prob)):
             temp = nominal_prob_dict.get((j, nominal_descriptors[i]))
-            if temp == None:
+            if performErrorCorrection and temp == None:
                 # Laplacian error correction for zero probabilities
                 prob[j] = prob[j] * (1 / class_stats[j])
             else:
@@ -69,15 +76,29 @@ def computeDescriptorPosterior(row, mean, std, class_stats, nominal_probs):
     return prob
 
 
+# Method to compute descriptor prior probability (i.e. P(X))
+def computeDescPriorProb(training_data, validation_data):
+    prob = 1.0
+    for i in nominal_attr_idx:
+        prob *= (training_data[i].value_counts()[validation_data[i][0]] / len(training_data))
+
+    return prob
+
+
 # Method that performs P(Ci) * P(X|Ci)
-def predictClass(row, mean, std, nominal_probs, class_stats, class_priors):
+def predictClass(row, mean, std, nominal_probs, class_stats, class_priors, run_type):
     descriptor_probs = computeDescriptorPosterior(row, mean, std, class_stats, nominal_probs)
 
-    probs = np.multiply(class_priors, descriptor_probs)
+    probs = np.ones(len(descriptor_probs))
+    for index, val in class_priors.iteritems():
+        probs[index] *= val * descriptor_probs[index]
 
-    # return the index of the maximum probability
-    # index corresponds to class label
-    return probs.idxmax()
+    if run_type == 'demo':
+        return probs
+    else:
+        # return the index of the maximum probability
+        # index corresponds to class label
+        return probs.argmax()
 
 
 # Method to compute the metrics (accuracy, precision, recall, f1 measure) for the given
@@ -103,7 +124,7 @@ def getMetrics(actual_labels, predicted_labels):
 
 
 # Method that invokes the steps in Naive Bayes algorithm
-def NaiveBayes(training_data, validation_data):
+def NaiveBayes(training_data, validation_data, run_type):
     validation_labels = validation_data["class"]
     training_labels = training_data["class"]
 
@@ -118,56 +139,82 @@ def NaiveBayes(training_data, validation_data):
     for i in nominal_attr_idx:
         # temporary value computed to ensure group by operation in next step
         # does not fail if dataset contains more than one nominal attribute
-        temp_val = 0 if i == 0 else 1
+        temp_val = 1 if i == 0 else 0
 
-        nominal_stats = data[['class', i, temp_val]].groupby(['class', i]).count()
+        nominal_stats = training_data[['class', i, temp_val]].groupby(['class', i]).count()
         z = nominal_stats[temp_val].astype("float")
-        for i in z.index.get_level_values(0).unique():
-            total = sum(z[i])
-            for j in range(len(z[i])):
-                z[i][j] = z[i][j] / total
+        r_z = z.reset_index()
+
+        for c in r_z['class'].unique():
+            temp_df = r_z[r_z['class'] == c]
+            total = sum(temp_df[temp_val])
+            for j in temp_df[i]:
+                z[c, j] = z[c, j] / total
         nominal_probs.append(z.to_dict())
 
     # eliminate last column (labels) from the data
     validation_data = validation_data[validation_data.columns[:-1]]
     training_data = training_data[training_data.columns[:-1]]
 
-    predicted = validation_data.apply(predictClass, axis=1, args=(training_data_mean,
+    if run_type == "demo":
+        probs = validation_data.apply(predictClass, axis=1, args=(training_data_mean,
                                                                   training_data_std, nominal_probs,
-                                                                  class_stats, class_priors))
+                                                                  class_stats, class_priors, run_type))
+        probs = probs.tolist()[0]
+        desc_prior_prob = computeDescPriorProb(training_data, validation_data)
+        probs /= desc_prior_prob
+        for i in range(len(probs)):
+            print("P(H" + str(i) + "|X) = " + str(probs[i]))
+        print("Prediced class - " + str(np.array(probs).argmax()))
 
-    return getMetrics(validation_labels, predicted)
+    if run_type == "normal":
+        predicted = validation_data.apply(predictClass, axis=1, args=(training_data_mean,
+                                                                      training_data_std, nominal_probs,
+                                                                      class_stats, class_priors, run_type))
+        return getMetrics(validation_labels, predicted)
 
 
-data_index_arr = np.arange(len(data))
-data_index_arr_split = np.array_split(data_index_arr, split_count)
+if performCrossFold:
+    data_index_arr = np.arange(len(data))
+    data_index_arr_split = np.array_split(data_index_arr, split_count)
 
-accuracy_list = list()
-precision_list = list()
-recall_list = list()
-f1_measure_list = list()
+    accuracy_list = list()
+    precision_list = list()
+    recall_list = list()
+    f1_measure_list = list()
 
-results = list()
+    results = list()
 
-for i in range(split_count):
-    validation_data = data.loc[data_index_arr_split[i]]
-    training_data_idx = np.hstack([x for j, x in enumerate(data_index_arr_split) if j != i])
-    training_data = data.loc[training_data_idx]
+    for i in range(split_count):
+        validation_data = data.loc[data_index_arr_split[i]]
+        training_data_idx = np.hstack([x for j, x in enumerate(data_index_arr_split) if j != i])
+        training_data = data.loc[training_data_idx]
 
-    accuracy, precision, recall, f1_measure = NaiveBayes(training_data, validation_data)
-    accuracy_list.append(accuracy)
-    precision_list.append(precision)
-    recall_list.append(recall)
-    f1_measure_list.append(f1_measure)
+        accuracy, precision, recall, f1_measure = NaiveBayes(training_data, validation_data, "normal")
+        accuracy_list.append(accuracy)
+        precision_list.append(precision)
+        recall_list.append(recall)
+        f1_measure_list.append(f1_measure)
 
-    results.append(
-        [str(data_index_arr_split[i][0]) + " - " + str(data_index_arr_split[i][-1]), accuracy, precision, recall,
-         f1_measure])
+    #         results.append([str(data_index_arr_split[i][0]) + " - " + str(data_index_arr_split[i][-1]) ,accuracy, precision, recall, f1_measure])
 
-results = pd.DataFrame(results, index=None,
-                       columns=["Validation Data", "Accuracy", "Precision", "Recall", "F1-Measure"])
-results.to_csv("NB_Validation_Results.csv")
-print("Accuracy: ", sum(accuracy_list) / split_count)
-print("Precision: ", sum(precision_list) / split_count)
-print("Recall: ", sum(recall_list) / split_count)
-print("F1-Measure: ", sum(f1_measure_list) / split_count)
+    #     results = pd.DataFrame(results, index=None, columns=["Validation Data", "Accuracy", "Precision", "Recall", "F1-Measure"])
+    #     results.to_csv("C:\\Users\\Linus-PC\\Desktop\\CSE601\\Projects\\Project3\\NB_Validation_Results.csv")
+    print("Accuracy: ", sum(accuracy_list) / split_count)
+    print("Precision: ", sum(precision_list) / split_count)
+    print("Recall: ", sum(recall_list) / split_count)
+    print("F1-Measure: ", sum(f1_measure_list) / split_count)
+
+else:
+    # Demo
+    test_data = input('Please input test descriptor : ').split(",")
+    for i in nominal_attr_idx:
+        test_data[i] = nominal_attr_map.get(i).get(test_data[i])
+    test_data.append(-1)  # to add a temporary class value to fit into generalized code
+    test_data = pd.DataFrame([test_data], index=None, columns=data.columns)
+    NaiveBayes(data, test_data, "demo")
+
+
+# Test inputs-
+# sunny,cool,high,weak
+# rain,hot,high,weak (From PPT -> Classification3 slide 15)
