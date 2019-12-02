@@ -297,8 +297,10 @@ class DecisionTree:
 
         gini_parent = self.gini_parent(data)
 
-        if split_index != -1 and gini_parent < gini_impurity:
-            print()
+        # if gini_impurity == 0.0:
+        #     print()
+        # if gini_parent < gini_impurity:
+        #     print()
         # No further split
         if split_index == -1 or gini_impurity == 0.0 or gini_parent < gini_impurity:
             root.label = self.get_max_label(data)

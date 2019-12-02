@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cdist
-import math
 
 
 def readfile(filename):
@@ -9,7 +8,7 @@ def readfile(filename):
     data = np.array(data.values)
 
     str_ind = list()
-
+        
     for i in range(len(data[0])):
         if isinstance(data[0][i], str):
             str_ind.append(i)
@@ -55,7 +54,8 @@ def knn(k, train_data, test_data, train_label, test_label):
         wt = [0, 0]
         for j in range(k):
             ind = int(knn_matrix[i][j])
-            wt[int(train_label[ind])] += 1
+            # wt[int(train_label[ind])] += 1
+            wt[int(train_label[ind])] += 1 / dist[ind]
 
         wt = np.asarray(wt)
         pred[i] = wt.argmax(axis=0)
@@ -116,49 +116,53 @@ def main(k, n, data):
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
+
     file = 'project3_dataset1.txt'
+    k = 10
     data = readfile(file)
-    a_list = list()
-    b_list = list()
-    c_list = list()
-    d_list = list()
 
-    for k in range(1, 10):
-        # k = int(math.sqrt(np.shape(data)[0]))
-        # 10-fold validation
-        n = 10
-        # k = 6
-        a, b, c, d = main(k, n, data)
-        a_list.append(a)
-        b_list.append(b)
-        c_list.append(c)
-        d_list.append(d)
+    # 10-fold validation
+    n = 10
 
-    fig = plt.figure(figsize=[12, 6])
-    ax = fig.gca
-    plt.subplot(221)
-    plt.plot(a_list)
-    plt.subplot(222)
-    plt.plot(b_list)
-    plt.subplot(223)
-    plt.plot(c_list)
-    plt.subplot(224)
-    plt.plot(d_list)
-    print()
+    # Enable this to plot performance measures vs k
+    plot = False
+    if plot:
+        a_list = list()
+        b_list = list()
+        c_list = list()
+        d_list = list()
 
-    # k = 40, n = 10
-    # Accuracy: 0.6708140610545792
-    # Precision: 0.6829857306785091
-    # Recall: 0.9188686251376005
-    # F1 - Measure: 0.7822417924774905
+        for k in range(1, 15):
+            # k = 6
+            a, b, c, d = main(k, n, data)
+            a_list.append(a)
+            b_list.append(b)
+            c_list.append(c)
+            d_list.append(d)
 
-    # k = int(math.sqrt(np.shape(data)[0]))
-    # n = 10
-    # Accuracy: 0.6686864014801109
-    # Precision: 0.6965914265914266
-    # Recall: 0.8710209813993022
-    # F1 - Measure: 0.7722690320403298
+        fig = plt.figure(figsize=[12, 6])
+        ax = fig.gca
+        plt.subplot(221)
+        plt.plot(a_list)
+        plt.xlabel("Accuracy")
+        plt.ylabel("k-values")
+        # plt.show()
+        plt.subplot(222)
+        plt.plot(b_list)
+        plt.xlabel("precision")
+        plt.ylabel("k-values")
+        # plt.show()
+        plt.subplot(223)
+        plt.plot(c_list)
+        plt.xlabel("Recall")
+        plt.ylabel("k-values")
+        # plt.show()
+        plt.subplot(224)
+        plt.plot(d_list)
+        plt.xlabel("F1-Measure")
+        plt.ylabel("k-values")
+        plt.show()
+        print()
 
-    # second dataset params
-    # k = 15 -> precision
-    # k = ->
+    else:
+        main(k, n, data)

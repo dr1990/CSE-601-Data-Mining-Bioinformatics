@@ -86,8 +86,8 @@ def main(file, n):
     for i in range(n):
         test = split_data[i]
         train = get_train_data(split_data, i)
-        m = int(train.shape[1] * 80 / 100)
-        rf = RandomForest(5, m)
+        m = int((train.shape[1] - 1) * 80 / 100)
+        rf = RandomForest(10, m)
         rf.fit(train)
         rf.classify(test)
         accuracy, precision, recall, f1_measure = rf.accuracy_measures(test[:, -1])
