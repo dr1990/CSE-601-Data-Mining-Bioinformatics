@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
 
-fileName = 'project3_dataset4.txt'
+fileName = 'project3_dataset1.txt'
 data = pd.read_csv(fileName, sep='\t', header=None, index_col=None)
 data.rename(columns={data.columns[-1]: "class"}, inplace=True)
 
-performCrossFold = False
-performErrorCorrection = False
+performCrossFold = True
+performErrorCorrection = True
 # Cross fold validation steps
 split_count = 10
 
@@ -24,8 +24,6 @@ for i in nominal_attr_idx:
         data[i] = data[i].replace(j, index)
         val_map[j] = index
     nominal_attr_map[i] = val_map
-
-
 # data
 
 # Method that calculates description posterior in the Naive Bayes formula i.e P(X|Hi)
@@ -110,10 +108,10 @@ def getMetrics(actual_labels, predicted_labels):
     for i, j in zip(actual_labels, predicted_labels):
         confusion_matrix[i][j] += 1
 
-    a = confusion_matrix[0][0]
-    b = confusion_matrix[0][1]
-    c = confusion_matrix[1][0]
-    d = confusion_matrix[1][1]
+    a = confusion_matrix[0][0]  # True Positive
+    b = confusion_matrix[0][1]  # False Negative
+    c = confusion_matrix[1][0]  # False Positive
+    d = confusion_matrix[1][1]  # True Negative
 
     accuracy = (float)(a + d) / (float)(a + b + c + d)
     precision = (float)(a) / (float)(a + c)
@@ -161,11 +159,11 @@ def NaiveBayes(training_data, validation_data, run_type):
                                                                   training_data_std, nominal_probs,
                                                                   class_stats, class_priors, run_type))
         probs = probs.tolist()[0]
-        desc_prior_prob = computeDescPriorProb(training_data, validation_data)
-        probs /= desc_prior_prob
+        #         desc_prior_prob = computeDescPriorProb(training_data, validation_data)
+        #         probs /= desc_prior_prob
         for i in range(len(probs)):
-            print("P(H" + str(i) + "|X) = " + str(probs[i]))
-        print("Prediced class - " + str(np.array(probs).argmax()))
+            print("P(X|H" + str(i) + ")*P(H" + str(i) + ") = " + str(probs[i]))
+        print("Predicted class - " + str(np.array(probs).argmax()))
 
     if run_type == "normal":
         predicted = validation_data.apply(predictClass, axis=1, args=(training_data_mean,
@@ -183,7 +181,7 @@ if performCrossFold:
     recall_list = list()
     f1_measure_list = list()
 
-    results = list()
+    #    results = list()
 
     for i in range(split_count):
         validation_data = data.loc[data_index_arr_split[i]]
@@ -196,10 +194,10 @@ if performCrossFold:
         recall_list.append(recall)
         f1_measure_list.append(f1_measure)
 
-    #         results.append([str(data_index_arr_split[i][0]) + " - " + str(data_index_arr_split[i][-1]) ,accuracy, precision, recall, f1_measure])
-
-    #     results = pd.DataFrame(results, index=None, columns=["Validation Data", "Accuracy", "Precision", "Recall", "F1-Measure"])
-    #     results.to_csv("C:\\Users\\Linus-PC\\Desktop\\CSE601\\Projects\\Project3\\NB_Validation_Results.csv")
+    #     results.append([str(data_index_arr_split[i][0]) + " - " + str(data_index_arr_split[i][-1]) ,accuracy, precision, recall, f1_measure])
+    #
+    # results = pd.DataFrame(results, index=None, columns=["Validation Data", "Accuracy", "Precision", "Recall", "F1-Measure"])
+    # results.to_csv("C:\\Users\\Linus-PC\\Desktop\\CSE601\\Projects\\Project3\\NB_Validation_Results.csv")
     print("Accuracy: ", sum(accuracy_list) / split_count)
     print("Precision: ", sum(precision_list) / split_count)
     print("Recall: ", sum(recall_list) / split_count)
@@ -213,7 +211,6 @@ else:
     test_data.append(-1)  # to add a temporary class value to fit into generalized code
     test_data = pd.DataFrame([test_data], index=None, columns=data.columns)
     NaiveBayes(data, test_data, "demo")
-
 
 # Test inputs-
 # sunny,cool,high,weak
