@@ -18,7 +18,7 @@ nominal_attr_idx = [i for i, x in enumerate(data.dtypes) if x == 'object']
 nominal_attr_map = dict()  # stores nominal attributes index to values mapping
 for i in nominal_attr_idx:
     unique_vals = data[i].unique()
-    unique_vals.sort();
+    unique_vals.sort()
     val_map = dict()
     for index, j in enumerate(unique_vals):
         data[i] = data[i].replace(j, index)
